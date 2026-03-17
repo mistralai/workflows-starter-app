@@ -1,0 +1,52 @@
+---
+id: installation
+sidebar_label: Installation
+title: Installation Guide
+sidebar_position: 2
+---
+
+# Installation
+
+This guide will walk you through setting up Workflows and verifying your installation.
+
+## Prerequisites
+
+Before installing the Workflows SDK, ensure you have:
+
+1. Python 3.12 or later installed
+2. [uv](https://docs.astral.sh/uv/getting-started/installation/) package manager installed
+
+## Install Workflows
+
+Install the Workflows package from PyPI using uv:
+
+```bash
+uv add mistralai-workflows
+```
+
+This will create a virtual environment (if one doesn't exist) and install Workflows along with its dependencies.
+
+### Installing Release Candidates
+
+The Workflows SDK is currently in release candidate stage. To install the latest version including release candidates:
+
+```bash
+uv add mistralai-workflows --prerelease=allow
+```
+
+## Verify Installation
+
+To verify your installation was successful, run the following command:
+
+```bash
+uv run python -c "import mistralai_workflows; print('Workflows is installed successfully!')"
+```
+
+If you encounter any errors during this step, please check that your Python environment is properly configured.
+
+## Next Steps
+
+Now that you have Workflows installed, you can proceed to:
+
+- [Your First Workflow](your-first-workflow.mdx) - Create and run your first workflow
+- [Core Concepts](core-concepts.mdx) - Understand the fundamental concepts

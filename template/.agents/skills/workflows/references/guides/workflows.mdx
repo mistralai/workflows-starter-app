@@ -1,0 +1,285 @@
+---
+id: workflows
+sidebar_label: Workflows
+title: Workflows
+sidebar_position: 1
+---
+
+# Workflows: The Brains of Your Application
+
+Workflows define the high-level business logic and coordinate activities in your application.
+
+## What is a Workflow?
+
+A workflow is a durable, deterministic process that orchestrates activities and manages execution state. Key characteristics:
+
+- Defined as Python classes
+- Can run for seconds to years (with proper checkpointing)
+- Maintains complete execution history
+- Automatically recovers from failures
+- Input/output limited to 2MB
+- Timeout if synchronous CPU-bound Python code exceeds 2 seconds ([see more](./limitations.mdx))
+
+## Workflow Determinism
+
+:::note Limitation: Determinism Not Enforced
+Workflows does not enforce determinism . This means you need to use Temporal's deterministic APIs in your workflow code to ensure correct replay behavior.
+:::
+
+Workflows must produce the same results when replayed (e.g., after worker restarts or failures). Temporal re-executes workflow code from the beginning using the event history.
+
+### Correct: Use Temporal's Deterministic APIs
+
+Always use these in workflow code:
+
+```python
+from temporalio import workflow as temporal_wf
+
+# ✅ Correct - Use workflow.now() for current time
+current_time = temporal_wf.now()
+
+# ✅ Correct - Use workflow.uuid4() for UUIDs
+request_id = temporal_wf.uuid4()
+
+# ✅ Correct - Use workflow.random() for random values
+random_value = temporal_wf.random()
+```
+
+### Dangerous: Standard Library Equivalents
+
+Don't use these directly in workflow code:
+
+```python
+# ❌ Dangerous - use temporalio.workflow.now() instead
+from datetime import datetime
+current_time = datetime.now()
+
+# ❌ Dangerous - use temporalio.workflow.uuid4() instead
+import uuid
+request_id = uuid.uuid4()
+
+# ❌ Dangerous - use temporalio.workflow.random() instead
+import random
+rand_val = random.random()
+```
+
+Also dangerous in workflows:
+- File system access (`open()`, `os.listdir()`, etc.)
+- Direct HTTP calls or database queries
+- Modifying global variables
+- System calls (`os.environ`, `os.getcwd()`, etc.)
+
+### Move Non-Deterministic Work to Activities
+
+For operations like external API calls, database queries, or file I/O, use activities:
+
+```python
+from mistralai_workflows import workflow
+from temporalio import workflow as temporal_wf
+
+@workflow.activity
+async def fetch_external_data(params: DataParams) -> ExternalData:
+    # ✅ Safe - Activities are not replayed
+    response = await http_client.get(params.url)
+    timestamp = datetime.now()  # OK in activities
+    return ExternalData(data=response.json(), fetched_at=timestamp)
+
+@workflow.define(name="my_workflow")
+class MyWorkflow:
+    @workflow.entrypoint
+    async def run(self, params: MyParams) -> MyResult:
+        # ✅ Correct - Non-deterministic work in activity
+        data = await temporal_wf.execute_activity(
+            fetch_external_data,
+            params,
+            start_to_close_timeout=timedelta(seconds=30),
+        )
+        return MyResult(data=data)
+```
+
+## Defining a Workflow
+
+Basic workflow structure:
+
+```python
+import mistralai_workflows as workflows
+
+@workflows.workflow.define(workflow_name="report_workflow")
+class MyWorkflow:
+    async def run(self, report_type: str, include_details: bool = False) -> dict:
+        """Workflow implementation"""
+        # Orchestrate activities here
+        pass
+```
+
+## Core Workflow Features
+
+### 1. Signals
+
+Handle external events with signals:
+
+```python
+@workflows.workflow.signal(name="approve", description="Approval signal")
+async def approve_signal(self, data: ApprovalData):
+    self.approved = True
+```
+
+[Learn more about signals](./signals-queries-updates.mdx)
+
+### 2. Queries
+
+Expose workflow state through queries:
+
+```python
+@workflows.workflow.query(name="get_status", description="Get current status")
+def get_status(self) -> WorkflowStatus:
+    return WorkflowStatus(
+        progress=self.progress,
+        status=self.current_status
+    )
+```
+
+[Learn more about queries](./signals-queries-updates.mdx)
+
+### 3. Updates
+
+Handle workflow updates:
+
+```python
+@workflows.workflow.update(name="update_config", description="Update workflow configuration")
+async def update_config(self, config: UpdateConfig) -> UpdateResult:
+    # Handle update
+    return UpdateResult(success=True)
+```
+
+[Learn more about updates](./signals-queries-updates.mdx)
+
+### 4. Schedules
+
+Define scheduled workflow executions using cron expressions:
+
+```python
+from mistralai_workflows.models import ScheduleDefinition
+
+schedule = ScheduleDefinition(
+    input={"report_type": "daily", "include_details": False},  # Input parameters for scheduled runs
+    cron_expressions=["0 0 * * *"]  # Run daily at midnight
+)
+
+@workflows.workflow.define(workflow_name="report_workflow", schedules=[schedule])
+class ReportWorkflow:
+    async def run(self, report_type: str = "daily", include_details: bool = False):
+        # Generate report
+        pass
+```
+
+Key schedule features:
+
+- Cron-based scheduling with standard cron expressions
+- Input parameters for scheduled executions
+- Multiple cron expressions can be specified
+
+[Learn more about scheduling](./scheduling.mdx)
+
+### 5. Child Workflows
+
+Execute other workflows as children:
+
+```python
+from datetime import timedelta
+from mistralai_workflows import workflow
+
+result = await workflow.execute_workflow(
+    ChildWorkflow,
+    params=child_params,
+    execution_timeout=timedelta(hours=1)
+)
+```
+
+### 6. Waiting for Conditions
+
+Wait for conditions to be met:
+
+```python
+from mistralai_workflows import workflow
+await workflow.wait_condition(
+    lambda: self.ready,
+    timeout=timedelta(minutes=5)
+)
+```
+
+### 7. Continue-As-New
+
+Reset workflow history for long-running or iterative workflows. Use this to prevent history from growing too large when processing large datasets or running indefinitely.
+
+**Important:** Your workflow's `run` method must accept a state parameter to restore its state when continuing as new. This parameter will receive the state passed to `continue_as_new()`.
+
+```python
+import mistralai_workflows as workflows
+
+@workflows.workflow.define(workflow_name="long-running-processor")
+class LongRunningProcessor:
+    @workflows.workflow.entrypoint
+    async def run(self, page: int = 0, total_processed: int = 0):  # State parameters are required
+        # Process current page
+
+        # Check if history is getting large
+        if workflows.workflow.should_continue_as_new():
+            # Continue with fresh history
+            workflows.workflow.continue_as_new({"page": page + 1, "total_processed": total_processed + 100})
+
+        return await self.run(page + 1, total_processed + 100)
+```
+
+**When to use continue-as-new:**
+
+- Long-running workflows that iterate indefinitely
+- When workflow history approaches size limits (~50K events)
+- Workflows that need to run for weeks/months
+
+For complete working examples see:
+[`workflow_with_continue_as_new.py`](https://github.com/mistralai/mistral-internal/blob/main/workflow_sdk/mistral_workflows/examples/workflow_with_continue_as_new.py)
+
+## Advanced Features
+
+### 1. Reset Mechanism
+
+You can "reset" a Workflow Execution to restart it from a specific point in its history. This is useful if your workflow gets stuck (for example, because of a non-deterministic error) or cannot complete. When you reset, the workflow ends its current run and starts again from the event you pick in the event history.
+
+All workflow events up to the reset point are copied to the new execution. The workflow then continues running from there using the latest version of your code. Any progress made after the reset event will be lost.
+
+Resetting should only be used after fixing the underlying problem. It’s best practice to provide a reason for the reset, which is recorded in the workflow’s event history.
+
+```python
+await client.reset_workflow(
+    execution_id="your-execution-id",
+    event_id=42,  # Must be a WORKFLOW_TASK_COMPLETED event
+    reason="Bug fixed in activity logic",
+    exclude_signals=True,  # Optional: skip replaying signals after this point
+    exclude_updates=True   # Optional: skip replaying updates after this point
+)
+```
+
+### 2. Workflow Execution Context
+
+Access workflow execution information:
+
+```python
+from mistralai_workflows import workflow
+execution_id = workflow.get_execution_id()
+```
+
+## Workflow vs Activity
+
+| Feature     | Workflow             | Activity           |
+| ----------- | -------------------- | ------------------ |
+| Duration    | Seconds to years     | Seconds to minutes |
+| State       | Stateful             | Stateless          |
+| Retries     | Manual recovery      | Automatic          |
+| Parallelism | Complex coordination | Single operation   |
+
+## Next Steps
+
+- [Activity Guide](activities.mdx) - Learn how to implement work units
+- [Observability Guide](observability.mdx) - Monitor and trace your workflows
+- [Scheduling Guide](scheduling.mdx) - Learn about advanced scheduling options

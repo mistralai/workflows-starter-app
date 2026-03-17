@@ -1,0 +1,26 @@
+"""Minimal example workflow — edit this file or create new ones."""
+
+import asyncio
+
+import mistralai_workflows as workflows
+
+
+@workflows.activity()
+async def greet(name: str) -> str:
+    """A simple activity that returns a greeting."""
+    return f"Hello, {name}! Welcome to Mistral Workflows."
+
+
+@workflows.workflow.define(
+    name="{{ project_name }}-hello",
+    workflow_display_name="Hello World",
+    workflow_description="A minimal hello-world workflow.",
+)
+class HelloWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, name: str) -> str:
+        return await greet(name)
+
+
+if __name__ == "__main__":
+    asyncio.run(workflows.run_worker([HelloWorkflow]))

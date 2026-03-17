@@ -1,0 +1,37 @@
+# {{ project_name }}
+
+A [Mistral Workflows](https://docs.mistral.ai/capabilities/workflows/) project.
+
+## Setup
+
+```bash
+uv sync
+```
+
+## Commands
+
+### Register the workflow in AI Studio
+
+Starts the worker, which registers the workflow with AI Studio and begins polling for executions:
+
+```bash
+make register
+```
+
+### Trigger a workflow execution
+
+In a separate terminal, trigger an execution of the hello workflow:
+
+```bash
+make start
+```
+
+## Development
+
+```bash
+# Format
+uv run ruff format .
+
+# Lint
+uv run ruff check --fix .
+```

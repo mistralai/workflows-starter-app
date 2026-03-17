@@ -1,0 +1,29 @@
+"""Trigger a workflow execution from the command line."""
+
+import asyncio
+import json
+import os
+import sys
+
+from mistralai_workflows.client import WorkflowsClient
+
+
+async def main() -> None:
+    input_data = json.loads(sys.argv[1]) if len(sys.argv) > 1 else {"name": "World"}
+
+    api_key = os.environ.get("MISTRAL_API_KEY", "")
+    if not api_key:
+        print("Error: MISTRAL_API_KEY is not set. Check your .env file.")
+        raise SystemExit(1)
+
+    client = WorkflowsClient(api_key=api_key)
+    print("Starting workflow execution ...")
+    result = await client.execute_workflow_and_wait(
+        "{{ project_name }}-hello",
+        input_data=input_data,
+    )
+    print(f"Result: {result}")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

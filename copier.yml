@@ -1,0 +1,13 @@
+_min_copier_version: "9.0.0"
+_subdirectory: "template"
+
+project_name:
+  type: str
+  default: "my-workflow"
+  help: "Project name"
+
+mistral_api_key:
+  type: str
+  secret: true
+  default: ""
+  help: "Mistral API key"
