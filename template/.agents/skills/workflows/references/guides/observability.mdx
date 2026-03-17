@@ -1,0 +1,147 @@
+---
+id: observabilities
+sidebar_label: Observability
+title: Workflow Observability
+sidebar_position: 6
+---
+
+# Workflow Observability
+
+Mistral Workflows provide built-in observability features to monitor and debug your workflows. This guide focuses on the Task system, which is the standard way to emit lifecycle and progress events.
+
+## What is a Task?
+
+A Task is a scoped unit of work that emits trace events as it runs. You can use Tasks in both activities and workflows to provide human-friendly context, progress, and metadata.
+
+:::info When Tasks Work
+**✅ Works:** Tasks work inside activities and workflows.
+
+**❌ Does not work:** Tasks do not work in local execution (calling workflow functions directly without a worker).
+
+:::
+
+## Using Tasks
+
+### In Activities
+
+Track progress within a single activity:
+
+```python
+from mistralai_workflows.core.task import task
+
+@workflows.activity()
+async def process_data(params: dict) -> dict:
+    async with task("data-processing", state={"batch_size": 1000, "status": "starting"}) as t:
+        result = await process_batch(params)
+        await t.update_state({"status": "completed"})
+    return result
+```
+
+### In Workflows
+
+Track progress across multiple activities:
+
+```python
+from mistralai_workflows.core.task import task
+
+@workflows.workflow.define(name="my-workflow")
+class MyWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, params: dict) -> dict:
+        async with task("multi-step-processing", state={"step": 0}) as t:
+            result1 = await my_activity_1(params)
+            await t.update_state({"step": 1})
+            
+            result2 = await my_activity_2(result1)
+            await t.update_state({"step": 2})
+        return result2
+```
+
+:::note
+In workflows, tasks use local activities internally for event emission, which maintains determinism during replay.
+:::
+
+## Track Activity Progress
+
+Use the Task system to record lifecycle events automatically in your activities:
+
+```python
+from mistralai_workflows.core.task import task
+
+@workflows.activity()
+async def process_batch(params: dict) -> dict:
+    async with task("data_processing", state={"batch_size": 1000, "status": "starting"}):
+        # Your processing code here
+        result = await process_data(params)
+    return result
+```
+
+This automatically emits:
+
+1. A "started" event when the block starts
+2. A "completed" event when it finishes successfully
+3. A "failed" event if an exception occurs
+
+## Add Custom State Updates
+
+Use task state updates for more granular progress tracking in activities:
+
+```python
+from mistralai_workflows.core.task import task
+
+@workflows.activity()
+async def process_payment(amount: float, currency: str) -> dict:
+    async with task("payment_processing", state={"amount": amount, "currency": currency, "status": "starting"}) as payment_task:
+        await payment_task.update_state({"status": "processing"})
+        result = await process_payment_api(amount, currency)
+        await payment_task.update_state({"status": "completed", "transaction_id": result.txn_id})
+    return result
+```
+
+## Local Execution Limitations
+
+:::caution Local Execution
+Tasks do not work in local execution (calling `workflow.execute_workflow()` directly without a worker). This is because:
+- Tasks require the worker's event infrastructure
+- Local execution bypasses activity interceptors needed for task event publishing
+
+Always use a worker when testing activities with tasks.
+:::
+
+## Activity Observability
+
+Activities automatically generate trace events. Use the `display_name` parameter to make them more readable:
+
+```python
+@workflows.activity(display_name="Processing customer emails")
+async def process_emails(params: ActivityParams) -> ActivityResult:
+    # Your activity code
+```
+
+## Recording Custom Events
+
+Add custom events in workflows or activities:
+
+```python
+# In workflow or activity code
+await workflows.record_event(
+    event_name="payment_processed",
+    attributes={"amount": 99.99, "currency": "USD"}
+)
+```
+
+## Fetching Workflow Traces
+
+```python
+# Get trace data
+trace = await client.get_workflow_execution_trace_otel(execution_id)
+
+# Get trace summary
+summary = await client.get_workflow_execution_trace_summary(execution_id)
+
+# Get detailed events
+events = await client.get_workflow_execution_trace_events(
+    execution_id,
+    include_internal_events=False  # Hide system events
+)
+```

@@ -1,0 +1,240 @@
+---
+id: python-sdk
+sidebar_label: Python SDK
+title: Python SDK
+sidebar_position: 5
+---
+
+# Python SDK Guide
+
+The Workflows Python SDK provides a convenient way to interact with the Workflows platform programmatically, allowing you to execute workflows, monitor their progress, and manage workflow definitions.
+
+## Prerequisites
+
+Before using the SDK, ensure you have:
+
+1. Followed the [installation instructions](./installation.mdx) to set up Workflows
+2. Completed the [your first workflow](./your-first-workflow.mdx) guide to run a worker with your first workflow
+
+## Getting Started
+
+### Basic Setup
+
+Initialize the client with your API credentials and namespace:
+
+```python
+from mistralai_workflows import WorkflowsClient
+
+# Initialize client
+client = WorkflowsClient(
+    base_url="https://api.mistral.ai", # For staging use https://api.globalaegis.net
+    api_key="your-api-key",     # Should match your worker's `MISTRAL_API_KEY`
+)
+```
+
+## Core Workflow Operations
+
+### 1. Executing Workflows
+
+Start a workflow execution with optional input data and custom execution ID:
+
+```python
+execution_id = "custom-id-123"
+execution = await client.execute_workflow(
+    workflow_identifier="simple_example_workflow",
+    input_data={"name": "MyName"},
+    execution_id=execution_id  # Optional
+)
+```
+
+### 2. Execute and Wait for Results
+
+For workflows where you need immediate results, use the synchronous execution method:
+
+```python
+result = await client.execute_workflow_and_wait(
+    workflow_identifier="simple_example_workflow",
+    input_data={"name": "MyName"},
+    use_api_sync=True  # Recommended for most cases
+)
+```
+
+This method offers two approaches:
+
+- `use_api_sync=True`: Uses the server's built-in synchronous execution (recommended)
+- `use_api_sync=False`: Uses client-side polling (default interval: 5 seconds)
+
+### 3. Checking Execution Status
+
+Monitor the progress of your workflow executions:
+
+```python
+status = await client.get_workflow_execution(execution_id=execution_id)
+print(f"Current status: {status.status}")
+```
+
+## Advanced Workflow Interactions
+
+### Signaling Workflows
+
+Send signals to running workflows to trigger specific behaviors:
+
+```python
+await client.signal_workflow(
+    execution_id="your-execution-id", # Execution id of the running workflow with signal method
+    signal_name="update_config", # Name of the signal method
+    input_data={"new_value": 42}
+)
+```
+
+### Querying Workflow State
+
+Retrieve information from running workflows without modifying their state:
+
+```python
+response = await client.query_workflow(
+    execution_id="your-execution-id", # Execution id of the running workflow with query method
+    query_name="get_status" # Name of the query method
+)
+print(response.result)
+```
+
+### Updating Running Workflows
+
+Modify workflow behavior during execution:
+
+```python
+response = await client.update_workflow(
+    execution_id="your-execution-id",
+    update_name="change_settings",
+    input_data={"timeout": 300}
+)
+```
+
+### Terminating Running Workflows
+
+Terminate a workflow during execution:
+
+```python
+await client.terminate_workflow_execution(execution_id=execution_id)
+```
+
+## Workflow Management
+
+### Listing Available Workflows
+
+Discover all registered workflows in your namespace:
+
+```python
+response = await client.get_workflows()
+print(f"These are all the available workflows: {response.workflows}")
+```
+
+### Retrieving Workflow Definitions
+
+Get detailed information about a specific workflow:
+
+```python
+response = await client.get_workflow(workflow_identifier="simple_example_workflow")
+print(f"The definition of this workflow is: {response.workflow}.")
+```
+
+## Execution Monitoring
+
+### Viewing Execution Traces
+
+Get detailed OpenTelemetry traces for debugging and analysis:
+
+```python
+trace = await client.get_workflow_execution_trace_otel(execution_id)
+```
+
+### Getting Trace Summaries
+
+Retrieve condensed information about workflow executions:
+
+```python
+summary = await client.get_workflow_execution_trace_summary(execution_id)
+```
+
+### Accessing Trace Events
+
+Examine individual events in a workflow execution:
+
+```python
+events = await client.get_workflow_execution_trace_events(
+    execution_id,
+    merge_same_id_events=True  # Combines events with the same ID
+)
+```
+
+## Scheduling Workflows
+
+### Creating Recurring Executions
+
+Set up workflows to run on a schedule:
+
+```python
+from mistralai_workflows.models import ScheduleDefinition
+schedule_id = "daily-name-schedule"
+schedule = await client.schedule_workflow(
+    workflow_identifier="simple_example_workflow",
+    schedule=ScheduleDefinition(
+        input={"name": "MyName"},
+        cron_expressions=["0 0 * * *"] # Runs daily at midnight
+    ),
+    schedule_id=schedule_id,
+)
+```
+
+### Managing Schedules
+
+View and manage all your scheduled workflows:
+
+```python
+# List all schedules
+response = await client.get_schedules()
+print(f"Here are all the defined schedules: {response.schedules}")
+# Remove a schedule
+await client.unschedule_workflow(schedule_id=schedule_id)
+```
+
+## Complete Example
+
+Here's a complete example showing workflow execution and result retrieval:
+
+```python
+from dotenv import load_dotenv
+
+load_dotenv()
+
+async def main() -> None:
+    from mistralai_workflows import WorkflowsClient
+
+    client = WorkflowsClient(
+        base_url="https://api.mistral.ai", # For staging use https://api.globalaegis.net
+        api_key=os.environ["MISTRAL_API_KEY"],
+    )
+
+    # Execute and wait for workflow completion
+    result = await client.execute_workflow_and_wait(
+        workflow_name="report_generator",
+        input_data={"report_type": "weekly"}
+    )
+
+    print(f"Workflow completed with result: {result}")
+
+if __name__ == "__main__":
+
+    import asyncio
+    asyncio.run(main())
+```
+
+## Next Steps
+
+Explore these related topics to deepen your understanding:
+
+- [Workflows Guide](../guides/workflows.mdx) - Learn about workflow fundamentals and design patterns
+- [Activities Guide](../guides/activities.mdx) - Learn about activity functions and their usage
+- [Scheduling](../guides/scheduling.mdx) - Advanced scheduling techniques and cron expressions
+- [Signals, Queries & Updates](../guides/signals-queries-updates.mdx) - Advanced workflow interaction patterns

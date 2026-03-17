@@ -1,0 +1,17 @@
+[project]
+name = "{{ project_name }}"
+version = "0.1.0"
+description = "A Mistral Workflows project"
+requires-python = ">=3.12"
+dependencies = [
+    "mistralai-workflows",
+    "pydantic",
+    "python-dotenv",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.11",
+    "mypy>=1.15",
+    "pytest>=8.0",
+]

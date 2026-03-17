@@ -1,0 +1,321 @@
+---
+id: streaming-consumption
+sidebar_label: Consuming Events
+title: Consuming Streaming Events
+sidebar_position: 8
+---
+
+# Consuming Streaming Events
+
+Subscribe to real-time events from workflows and activities using the Workflows API client or direct NATS subscriptions.
+
+## Using the Workflows API Client
+
+### Basic Consumption
+
+```python
+from mistralai_workflows import WorkflowsClient
+from mistralai_workflows.protocol.v1.streaming import StreamEventsQueryParams
+
+async with WorkflowsClient(base_url="https://api.mistral.ai", api_key=os.environ["MISTRAL_API_KEY"]) as client:
+    # Start a workflow
+    execution = await client.execute_workflow(workflow_identifier="my-workflow", input_data=params)
+
+    # Stream all events for this execution
+    async for event in client.stream_events(params=StreamEventsQueryParams(workflow_exec_id=execution.execution_id)):
+        print(f"[{event.stream}] {event.data}")
+```
+
+### Filtering by Stream Name
+
+Only receive events from a specific stream:
+
+```python
+async for event in client.stream_events(
+    StreamEventsQueryParams(
+        workflow_exec_id=execution_id,
+        stream="token"  # Only token events
+    )
+):
+    print(event.data)
+```
+
+### Detecting Completion
+
+Internal status events tell you when workflows/activities start and finish:
+
+```python
+async for event in client.stream_events(StreamEventsQueryParams(workflow_exec_id=execution_id)):
+    if event.stream == "__internal_status__":
+        status = event.data.get("status")
+        if status == "WORKFLOW_COMPLETED":
+            print("Done!")
+            break
+        elif status == "WORKFLOW_FAILED":
+            print(f"Failed: {event.data.get('message')}")
+            break
+    else:
+        # Handle your custom events
+        record_event(event)
+```
+
+### Resume from Sequence
+
+If your connection drops, resume from where you left off:
+
+```python
+last_seq = 0
+while True:
+    try:
+        async for event in client.stream_events(
+            StreamEventsQueryParams(
+                workflow_exec_id=execution_id,
+                start_seq=last_seq
+            )
+        ):
+            last_seq = event.sequence
+            process(event)
+        break  # Completed normally
+    except ConnectionError:
+        await asyncio.sleep(1)
+        # Loop will resume from last_seq
+```
+
+## NATS Subject Structure
+
+Understanding the subject hierarchy helps you filter events precisely.
+
+### Subject Format
+
+```
+{stream}_{namespace}.{workflow_name}.{parent_exec_id}.{exec_id}.{topic}.{scope}
+```
+
+| Segment            | Description                | Example                        |
+| ------------------ | -------------------------- | ------------------------------ |
+| `stream_namespace` | Stream prefix + namespace  | `customer_uuid:workspace_uuid` |
+| `workflow_name`    | Workflow name              | `my-workflow`                  |
+| `parent_exec_id`   | Parent workflow's exec ID  | `abc123`                       |
+| `exec_id`          | Current workflow's exec ID | `def456`                       |
+| `topic`            | Stream name (your choice)  | `token`                        |
+| `scope`            | `workflow` or `activity.*` | `workflow`                     |
+
+### Scope Values
+
+**Workflow events** end with `.workflow`:
+
+```
+...token.workflow
+```
+
+**Activity events** end with `.activity.{name}.{id}.{attempt}`:
+
+```
+...token.activity.chat_activity.1.1
+```
+
+## NATS Wildcards
+
+NATS supports two wildcards for flexible subscriptions:
+
+| Wildcard | Matches                              | Example                 |
+| -------- | ------------------------------------ | ----------------------- |
+| `*`      | Single token (segment)               | `*.my-workflow.*.*.*.*` |
+| `>`      | One or more tokens (rest of subject) | `*.*.*.*.token.>`       |
+
+### Wildcard Examples
+
+```
+# All events for a specific workflow name (any execution)
+*.my-workflow.*.*.*.>
+
+# All token events across all workflows
+*.*.*.*.token.>
+
+# All workflow-level events (not activities)
+*.*.*.*.*.workflow
+
+# All activity events
+*.*.*.*.*.activity.>
+
+# Events for a specific execution
+*.*.*.exec123.*.>
+
+# Events in a workflow tree (by parent ID)
+*.*.parent123.*.*.>
+
+# Specific activity type across all workflows
+*.*.*.*.*.activity.chat_activity.*.*
+```
+
+## API Routes
+
+### Stream Events Endpoint
+
+```
+GET /v1/workflows/executions/{execution_id}/stream
+```
+
+Query parameters for filtering:
+
+| Parameter          | Description                    | Example                      |
+| ------------------ | ------------------------------ | ---------------------------- |
+| `stream`           | Filter by stream name          | `?stream=token`              |
+| `workflow_name`    | Filter by workflow name        | `?workflow_name=my-workflow` |
+| `workflow_exec_id` | Filter by execution ID         | `?workflow_exec_id=abc123`   |
+| `scope`            | `workflow`, `activity`, or `*` | `?scope=activity`            |
+| `start_seq`        | Resume from sequence           | `?start_seq=42`              |
+
+### Example: Token Streaming
+
+```bash
+curl -N "http://localhost:8000/v1/workflows/executions/${EXEC_ID}/stream?stream=token"
+```
+
+Response (Server-Sent Events):
+
+```
+data: {"stream":"token","sequence":1,"data":"Hello","workflow_context":{...}}
+
+data: {"stream":"token","sequence":2,"data":" world","workflow_context":{...}}
+
+data: {"stream":"__internal_status__","sequence":3,"data":{"status":"WORKFLOW_COMPLETED"},...}
+```
+
+### Example: All Events with Wildcard
+
+```bash
+# All events for an execution
+curl -N "http://localhost:8000/v1/workflows/executions/${EXEC_ID}/stream"
+
+# Only activity events
+curl -N "http://localhost:8000/v1/workflows/executions/${EXEC_ID}/stream?scope=activity"
+
+# Only workflow-level events
+curl -N "http://localhost:8000/v1/workflows/executions/${EXEC_ID}/stream?scope=workflow"
+```
+
+## Sub-Workflow Events
+
+When a workflow spawns child workflows, events maintain parent-child relationships:
+
+```python
+# Parent workflow
+@workflows.workflow.define(name="parent-workflow")
+class ParentWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, params):
+        # Child workflow events will have parent_workflow_exec_id set
+        result = await workflows.workflow.execute_workflow(
+            ChildWorkflow,
+            params
+        )
+        return result
+```
+
+### Consuming Events from Workflow Trees
+
+```python
+# Get events from parent AND all children
+async for event in client.stream_events(
+    parent_execution_id,
+    include_children=True
+):
+    if event.workflow_context.parent_workflow_exec_id:
+        print(f"[child] {event.data}")
+    else:
+        print(f"[parent] {event.data}")
+```
+
+### Filtering by Parent ID
+
+Using NATS wildcards to get all events in a workflow tree:
+
+```
+# All events where parent_exec_id matches
+*.*.{parent_exec_id}.*.*.>
+```
+
+## Internal Status Events
+
+The Workflows SDK automatically publishes status events on `__internal_status__`:
+
+| Status               | Description                    |
+| -------------------- | ------------------------------ |
+| `WORKFLOW_RUNNING`   | Workflow started               |
+| `WORKFLOW_COMPLETED` | Workflow finished successfully |
+| `WORKFLOW_FAILED`    | Workflow failed                |
+| `ACTIVITY_RUNNING`   | Activity started               |
+| `ACTIVITY_COMPLETED` | Activity finished              |
+| `ACTIVITY_FAILED`    | Activity failed                |
+| `ACTIVITY_RETRYING`  | Activity is retrying           |
+
+### Example Status Event
+
+```json
+{
+  "stream": "__internal_status__",
+  "sequence": 1,
+  "data": {
+    "status": "WORKFLOW_RUNNING",
+    "message": "Starting workflow 'my-workflow'"
+  },
+  "workflow_context": {
+    "namespace": "prod",
+    "workflow_name": "my-workflow",
+    "workflow_exec_id": "abc123",
+    "parent_workflow_exec_id": null
+  }
+}
+```
+
+## Best Practices
+
+### 1. Always Handle Disconnection
+
+```python
+async def resilient_consume(client, exec_id):
+    last_seq = 0
+    max_retries = 10
+
+    for attempt in range(max_retries):
+        try:
+            async for event in client.stream_events(exec_id, start_seq=last_seq):
+                last_seq = event.sequence
+                yield event
+
+                if is_terminal_status(event):
+                    return
+        except ConnectionError:
+            await asyncio.sleep(min(2 ** attempt, 30))
+```
+
+### 2. Filter Early
+
+Filter at the subscription level, not in your code:
+
+```python
+# Good: Filter at source
+async for event in client.stream_events(exec_id, stream="token"):
+    process(event)
+
+# Bad: Filter in code (wastes bandwidth)
+async for event in client.stream_events(exec_id):
+    if event.stream == "token":
+        process(event)
+```
+
+### 3. Use Appropriate Scope
+
+If you only care about activity events:
+
+```python
+async for event in client.stream_events(exec_id, scope="activity"):
+    # Only activity events, no workflow-level events
+    process(event)
+```
+
+## Next Steps
+
+- [Publishing Events](streaming.mdx) - How to publish from workflows/activities
+- [Streaming Architecture](../appendices/streaming.mdx) - Technical implementation details
