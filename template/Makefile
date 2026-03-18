@@ -1,14 +1,14 @@
-.PHONY: register start installdeps
+.PHONY: start-worker execute installdeps
 
 ## Install dependencies
 installdeps:
 	uv sync
 
-## Discover all workflows and start the worker
-register:
+## Auto-discover all workflows and start the worker
+start-worker:
 	TEMPORAL_TASK_QUEUE=$$(hostname) uv run python src/discover.py
 
 ## Trigger a workflow execution
-## Usage: make start path=src/workflows/start.py input='{"name": "World"}'
-start:
-	uv run python $(or $(path),src/workflows/start.py) $(input)
+## Usage: make execute workflow=hello input='{"name": "World"}'
+execute:
+	TEMPORAL_TASK_QUEUE=$$(hostname) uv run python src/workflows/start.py $(or $(workflow),hello) $(input)

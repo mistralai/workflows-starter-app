@@ -1,6 +1,12 @@
 """Minimal example workflow — edit this file or create new ones."""
 
+from pydantic import BaseModel
+
 import mistralai_workflows as workflows
+
+
+class HelloInput(BaseModel):
+    name: str = "World"
 
 
 @workflows.activity()
@@ -10,11 +16,11 @@ async def greet(name: str) -> str:
 
 
 @workflows.workflow.define(
-    name="{{ project_name }}-hello",
+    name="hello world",
     workflow_display_name="Hello World",
     workflow_description="A minimal hello-world workflow.",
 )
 class HelloWorkflow:
     @workflows.workflow.entrypoint
-    async def run(self, name: str) -> str:
-        return await greet(name)
+    async def run(self, input: HelloInput) -> str:
+        return await greet(input.name)

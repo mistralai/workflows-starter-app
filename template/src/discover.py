@@ -2,12 +2,18 @@
 
 import asyncio
 import importlib
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
+
 import inspect
 import pkgutil
 import sys
 
 import mistralai_workflows as workflows
-from mistralai_workflows.core.definition.workflow_definition import get_workflow_definition
+from mistralai_workflows.core.definition.workflow_definition import (
+    get_workflow_definition,
+)
 
 
 def discover_workflows() -> list[type]:
@@ -15,7 +21,9 @@ def discover_workflows() -> list[type]:
     discovered = []
     package = importlib.import_module("workflows")
 
-    for _, modname, ispkg in pkgutil.iter_modules(package.__path__, prefix="workflows."):
+    for _, modname, ispkg in pkgutil.iter_modules(
+        package.__path__, prefix="workflows."
+    ):
         if ispkg:
             continue
         module = importlib.import_module(modname)

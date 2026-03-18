@@ -15,15 +15,15 @@ uv sync
 Auto-discovers all workflow classes in `src/workflows/`, registers them with AI Studio, and starts polling for executions. The task queue is set to your hostname:
 
 ```bash
-make register
+make start-worker
 ```
 
-### Trigger a workflow execution
+### Execute a workflow
 
-In a separate terminal, trigger an execution of the hello workflow:
+In a separate terminal, trigger a workflow execution by name:
 
 ```bash
-make start
+make execute workflow=hello
 ```
 
 ## Development
