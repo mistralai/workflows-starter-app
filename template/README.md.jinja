@@ -10,9 +10,9 @@ uv sync
 
 ## Commands
 
-### Register the workflow in AI Studio
+### Register workflows in AI Studio
 
-Starts the worker, which registers the workflow with AI Studio and begins polling for executions:
+Auto-discovers all workflow classes in `src/workflows/`, registers them with AI Studio, and starts polling for executions. The task queue is set to your hostname:
 
 ```bash
 make register

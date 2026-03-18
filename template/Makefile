@@ -4,10 +4,9 @@
 installdeps:
 	uv sync
 
-## Register a workflow and start its worker
-## Usage: make register path=src/workflows/hello.py
+## Discover all workflows and start the worker
 register:
-	uv run python $(or $(path),src/workflows/hello.py)
+	TEMPORAL_TASK_QUEUE=$$(hostname) uv run python src/discover.py
 
 ## Trigger a workflow execution
 ## Usage: make start path=src/workflows/start.py input='{"name": "World"}'

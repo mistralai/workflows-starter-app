@@ -1,7 +1,5 @@
 """Minimal example workflow — edit this file or create new ones."""
 
-import asyncio
-
 import mistralai_workflows as workflows
 
 
@@ -20,7 +18,3 @@ class HelloWorkflow:
     @workflows.workflow.entrypoint
     async def run(self, name: str) -> str:
         return await greet(name)
-
-
-if __name__ == "__main__":
-    asyncio.run(workflows.run_worker([HelloWorkflow]))
