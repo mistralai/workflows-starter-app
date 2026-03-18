@@ -11,3 +11,8 @@ mistral_api_key:
   secret: true
   default: ""
   help: "Mistral API key"
+
+temporal_task_queue:
+  type: str
+  default: "default"
+  help: "Temporal task queue name"
