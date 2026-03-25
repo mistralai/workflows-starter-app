@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 from pydantic import create_model
 
-from mistralai_workflows.client import WorkflowsClient
+from mistralai.workflows.client import WorkflowsClient
 
 load_dotenv(override=True)
 

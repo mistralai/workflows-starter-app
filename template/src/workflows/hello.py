@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel
 
-import mistralai_workflows as workflows
+import mistralai.workflows as workflows
 
 
 class HelloInput(BaseModel):
