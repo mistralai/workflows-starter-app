@@ -8,8 +8,8 @@ import inspect
 import pkgutil
 import sys
 
-import mistralai_workflows as workflows
-from mistralai_workflows.core.definition.workflow_definition import (
+import mistralai.workflows as workflows
+from mistralai.workflows.core.definition.workflow_definition import (
     get_workflow_definition,
 )
 
