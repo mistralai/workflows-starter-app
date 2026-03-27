@@ -1,6 +1,5 @@
 ---
 id: ha
-sidebar_label: How to handle large data
 title: How to handle large data
 sidebar_position: 9
 ---
@@ -27,20 +26,20 @@ Note that this differs from payload offloading which makes the payload available
 To use offloaded attributes, you need to install the Workflows SDK with the appropriate cloud storage provider:
 
 ```bash
-# For AWS S3
+## For AWS S3
 uv add "mistralai-workflows[s3]"
 
-# For Azure Blob Storage
+## For Azure Blob Storage
 uv add "mistralai-workflows[azure]"
 
-# For Google Cloud Storage
+## For Google Cloud Storage
 uv add "mistralai-workflows[gcs]"
 
-# Or install all storage providers
+## Or install all storage providers
 uv add "mistralai-workflows[storage]"
 ```
 
-See the [installation guide](../getting-started/installation.mdx#cloud-storage-providers) for more details.
+See the [installation guide](../getting-started/installation#cloud-storage-providers) for more details.
 
 ## Config
 
@@ -55,7 +54,7 @@ Blobs are prefixed by `temporal-activity-payload/<URL ENCODED NAMESPACE>`, allow
 If you use the **starter-app**, use these environment variables to configure blob storage:
 
 ```
-# Azure:
+## Azure:
 ACTIVITY_ATTRIBUTES_OFFLOADING__ENABLED=true
 ACTIVITY_ATTRIBUTES_OFFLOADING__MIN_SIZE_BYTES=1048576 # 1MB
 ACTIVITY_ATTRIBUTES_OFFLOADING__STORAGE_CONFIG__STORAGE_PROVIDER=azure
@@ -68,7 +67,7 @@ ACTIVITY_ATTRIBUTES_OFFLOADING__STORAGE_CONFIG__AZURE_CONNECTION_STRING=XXX
 To define a field as offloadable, use the `OffloadableField` type in your Pydantic model:
 
 ```python
-from mistralai_workflows.core.encoding.fields_offloader import OffloadableModel, OffloadableField
+from mistralai.workflows.core.encoding.fields_offloader import OffloadableModel, OffloadableField
 
 class MyPayload(OffloadableModel):
     random_field: str  # Regular field (not offloaded)
@@ -128,7 +127,7 @@ Each `OffloadableField` is stored as a **separate blob** in blob storage. To opt
 **Example:**
 
 ```python
-from mistralai_workflows.core.encoding.fields_offloader import OffloadableModel, OffloadableField
+from mistralai.workflows.core.encoding.fields_offloader import OffloadableModel, OffloadableField
 from pydantic import BaseModel
 
 class LargeDataGroup(BaseModel):

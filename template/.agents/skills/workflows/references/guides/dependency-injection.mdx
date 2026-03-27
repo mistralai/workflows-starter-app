@@ -1,6 +1,5 @@
 ---
 id: dependency-injection
-sidebar_label: Dependency Injection
 title: Dependency Injection
 sidebar_position: 6
 ---
@@ -125,8 +124,8 @@ async def get_async_data_stream():
 Activities can declare their dependencies using the `Depends()` marker. The system will automatically provide these dependencies when the activity executes:
 
 ```python
-import mistralai_workflows as workflows
-from mistralai_workflows import Depends
+import mistralai.workflows as workflows
+from mistralai.workflows import Depends
 
 @workflows.activity()
 async def create_user(
@@ -182,5 +181,5 @@ async def get_payment_client() -> PaymentServiceClient:
 
 ## Next Steps
 
-- [Workflow Guide](workflows.mdx) - Learn more about workflow fundamentals
-- [Activity Guide](activities.mdx) - Understand how activities complement workflows
+- [Workflow Guide](workflows) - Learn more about workflow fundamentals
+- [Activity Guide](activities) - Understand how activities complement workflows

@@ -1,6 +1,5 @@
 ---
 id: local-execution
-sidebar_label: Local Execution
 title: Local Execution
 sidebar_position: 10
 ---
@@ -26,7 +25,8 @@ Local execution is limited to prototyping. It cannot replicate distributed capab
 Use `workflows.execute_workflow()` to run workflows locally:
 
 ```python
-import mistralai_workflows as workflows
+import mistralai.workflows as workflows
+from pydantic import BaseModel
 
 @workflows.activity()
 async def validate_data(data_id: str) -> bool:
@@ -36,6 +36,10 @@ async def validate_data(data_id: str) -> bool:
 async def process_data(data_id: str) -> dict:
     return {"processed_id": data_id, "status": "done"}
 
+class DataProcessingParams(BaseModel):
+    data_id: str
+    validate_first: bool = True
+
 @workflows.workflow.define(name="data-processing")
 class DataProcessingWorkflow:
     @workflows.workflow.entrypoint
@@ -44,10 +48,10 @@ class DataProcessingWorkflow:
             raise ValueError("Validation failed")
         return await process_data(data_id)
 
-# Local execution
+## Local execution — params must be a Pydantic model, not a dict
 result = await workflows.execute_workflow(
     DataProcessingWorkflow,
-    params={"data_id": "item-123", "validate_first": True}
+    params=DataProcessingParams(data_id="item-123", validate_first=True)
 )
 ```
 
@@ -56,7 +60,14 @@ result = await workflows.execute_workflow(
 Child workflows via `workflows.execute_workflow()` execute directly in local mode:
 
 ```python
-import mistralai_workflows as workflows
+import mistralai.workflows as workflows
+from pydantic import BaseModel
+
+class ChildParams(BaseModel):
+    value: str
+
+class ParentParams(BaseModel):
+    data: str
 
 @workflows.workflow.define(name="child")
 class ChildWorkflow:
@@ -69,12 +80,12 @@ class ParentWorkflow:
     @workflows.workflow.entrypoint
     async def run(self, data: str) -> str:
         child_result = await workflows.execute_workflow(
-            ChildWorkflow, params={"value": data}
+            ChildWorkflow, params=ChildParams(value=data)
         )
         return f"Parent got: {child_result}"
 
-# Full chain executes locally
-result = await workflows.execute_workflow(ParentWorkflow, params={"data": "test"})
+## Full chain executes locally
+result = await workflows.execute_workflow(ParentWorkflow, params=ParentParams(data="test"))
 ```
 
 ## Executing Activities Locally
@@ -87,8 +98,8 @@ Activities called outside workflows execute directly with:
 - **Nested calls** - Only outermost activity applies retry logic
 
 ```python
-import mistralai_workflows as workflows
-from mistralai_workflows import Depends
+import mistralai.workflows as workflows
+from mistralai.workflows import Depends
 
 class HttpClient:
     def __init__(self, timeout: int):
@@ -107,7 +118,7 @@ async def fetch_user(
 ) -> dict:
     return await client.get(f"/users/{user_id}")
 
-# Retries and DI work locally
+## Retries and DI work locally
 user = await fetch_user("123")
 ```
 
@@ -143,19 +154,19 @@ Local execution cannot replicate distributed capabilities:
 The SDK detects execution context via `temporalio.workflow.in_workflow()`. Outside a workflow context, activities and workflows execute as regular Python async functions with retry wrappers.
 
 ```python
-import mistralai_workflows as workflows
+import mistralai.workflows as workflows
 
 @workflows.activity()
 async def send_email(to: str, subject: str, body: str) -> dict:
     return {"message_id": "msg-123"}
 
-# Direct call - executes locally with retry logic
+## Direct call - executes locally with retry logic
 result = await send_email("user@example.com", "Hello", "Test message")
 ```
 
 ## Next Steps
 
-- [Activities](./activities.mdx) - Activity patterns and configuration
-- [Workflows](./workflows.mdx) - Workflow fundamentals
-- [Signals & Queries](./signals-queries-updates.mdx) - External interaction (requires deployment)
-- [Streaming](./streaming.mdx) - Real-time event streaming (requires deployment)
+- [Activities](./activities) - Activity patterns and configuration
+- [Workflows](./workflows) - Workflow fundamentals
+- [Signals & Queries](./signals-queries-updates) - External interaction (requires deployment)
+- [Streaming](./streaming) - Real-time event streaming (requires deployment)

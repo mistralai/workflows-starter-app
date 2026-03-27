@@ -1,6 +1,5 @@
 ---
 id: workflows-exception
-sidebar_label: Workflows Exception
 title: Workflows Exception
 sidebar_position: 2
 ---
@@ -21,10 +20,10 @@ Workflows provides a structured exception system through `WorkflowsException` fo
 ## Basic Usage
 
 ```python
-from mistralai_workflows.exceptions import WorkflowsException, ErrorCode
+from mistralai.workflows.exceptions import WorkflowsException, ErrorCode
 from http import HTTPStatus
 
-# Raise a custom exception
+## Raise a custom exception
 raise WorkflowsException(
     code=ErrorCode.WORKFLOW_DEFINITION_ERROR,
     message=f"{workflow} class must be decorated with @workflows.workflow.define",
@@ -54,7 +53,6 @@ The `ErrorCode` enum provides structured error codes organized by category:
 | `temporal_connection_error` | Connection to Temporal failed |
 | `temporal_client_creation_error` | Failed to create Temporal client |
 | `search_attributes_creation_error` | Failed to create search attributes |
-
 
 ### Activity Errors (41**)
 
@@ -104,7 +102,6 @@ The `ErrorCode` enum provides structured error codes organized by category:
 | `unserializable_payload_error` | Payload cannot be serialized |
 | `blob_storage_config_error` | Blob storage configuration error |
 
-
 ### API Endpoint Errors (46**)
 
 The following error codes are used to identify specific errors that can occur when interacting with the workflow API. These codes follow the `{HTTP_METHOD}_{ENDPOINT}_ERROR` naming convention and are returned in the `code` field of error responses.
@@ -132,8 +129,6 @@ The following error codes are used to identify specific errors that can occur wh
 | `post_events_error` | Error when posting events |
 
 ## Exception Properties and Methods
-
-
 
 ### `from_temporal_error()`
 
@@ -174,9 +169,8 @@ except httpx.HTTPError as e:
     )
 ```
 
-
 ## Next Steps
 
-- [Workflows Guide](workflows.mdx) - Learn about workflow fundamentals
-- [Activities Guide](activities.mdx) - Learn how to implement activities
-- [Observability Guide](observability.mdx) - Monitor and trace your workflows
+- [Workflows Guide](workflows) - Learn about workflow fundamentals
+- [Activities Guide](activities) - Learn how to implement activities
+- [Observability Guide](observability) - Monitor and trace your workflows

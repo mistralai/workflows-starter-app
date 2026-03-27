@@ -9,6 +9,14 @@ When executing child workflows, providing a deterministic execution ID ensures:
 - **Traceability**: Easy to correlate parent and child workflows
 - **Replay safety**: Workflow replays use the same execution IDs
 
+## SDK Context
+
+The SDK's `execute_workflow` accepts an optional `execution_id` parameter. When omitted:
+- **Inside a workflow**: a random child workflow ID is generated
+- **Outside a workflow (client calls)**: The SDK auto-generates a 64-char hex ID via `generate_two_part_id()` using uuid5
+
+For child workflows where idempotency matters, always provide a deterministic `execution_id`.
+
 ## Implementation
 
 ```python
@@ -34,10 +42,10 @@ def get_child_workflow_execution_id(task_name: str, case_id: str) -> str:
 ### Basic Usage
 
 ```python
-import mistralai_workflows as workflows
+import mistralai.workflows as workflows
 from .utils import get_child_workflow_execution_id
 
-@workflows.workflow.define(workflow_name="parent-workflow")
+@workflows.workflow.define(name="parent-workflow")
 class ParentWorkflow:
 
     @workflows.workflow.entrypoint
@@ -54,15 +62,19 @@ class ParentWorkflow:
             ),
         )
 
-        # Another child workflow
-        process_result = await workflows.workflow.execute_workflow(
+        # Another child workflow with fire-and-forget
+        handle = await workflows.workflow.execute_workflow(
             ProcessDataWorkflow,
             ProcessParams(data=validation_result.data),
             execution_id=get_child_workflow_execution_id(
                 task_name="process-data",
                 case_id=case_id
             ),
+            wait=False,  # returns ChildWorkflowHandle immediately
         )
+
+        # Can await the handle later
+        process_result = await handle
 
         return Result(output=process_result.output)
 ```
@@ -129,6 +141,21 @@ for item in items:
             item_id=item.id,
         ),
     )
+```
+
+## `execute_workflow` Full Signature
+
+For reference, the SDK's `execute_workflow` accepts:
+
+```python
+await workflows.workflow.execute_workflow(
+    workflow=MyWorkflow,              # workflow class (decorated with @workflow.define)
+    params=MyParams(...),             # Pydantic BaseModel
+    execution_timeout=timedelta(hours=1),  # max runtime (default: 1h)
+    execution_id="my-deterministic-id",    # optional; auto-generated if None
+    wait=True,                        # True → await result; False → return ChildWorkflowHandle
+    parent_close_policy=None,         # TERMINATE (wait=True) or ABANDON (wait=False) by default
+)
 ```
 
 ## Why Deterministic IDs Matter

@@ -1,6 +1,5 @@
 ---
 id: activities
-sidebar_label: Activities
 title: Activities
 sidebar_position: 2
 ---
@@ -13,19 +12,23 @@ Activities perform the actual work in your application while workflows coordinat
 
 An activity is a unit of work that performs actual computations, API calls, or other operations. Key characteristics:
 
-- Defined as async Python functions decorated with `@workflows.activity()`
 - Must be idempotent (safe to retry)
 - Execute in isolated processes
 - Have automatic retry mechanisms
 - Accept any JSON-serializable types as inputs/outputs (str, int, dict, list, etc.)
 - Input/output limited to 2MB
 
+> **Security Warning:** Do not pass sensitive data (API keys, passwords, PII, tokens) as activity inputs or outputs.
+> All activity parameters and return values are persisted in the event history in plaintext unless
+> [payload encryption](payload-encoding) is explicitly configured. Treat all inputs/outputs as visible
+> to anyone with access to the namespace.
+
 ## Defining an Activity
 
 Basic activity structure:
 
 ```python
-import mistralai_workflows as workflows
+import mistralai.workflows as workflows
 
 @workflows.activity()
 async def my_activity(input_data: str, count: int = 1) -> dict:
@@ -142,7 +145,7 @@ For example, if you have a process that involves fetching data from an API, proc
 When designing activities, it's important to understand how state management works, especially when activities are nested within each other. If an activity is encapsulated within another activity, only the parent activity will be considered for retries and state management. This means that the state will be saved before the nested activity, and only the parent activity will be retried in case of failure.
 
 ```python
-import mistralai_workflows as workflows
+import mistralai.workflows as workflows
 
 @workflows.activity()
 async def parent_activity(input_data: str) -> dict:
@@ -181,7 +184,7 @@ For performance optimization, activities can run directly in the workflow worker
 ### Basic Usage
 
 ```python
-from mistralai_workflows import run_activities_locally
+from mistralai.workflows import run_activities_locally
 
 @workflows.activity()
 async def validate_email(email: str) -> bool:
@@ -271,9 +274,9 @@ Sticky worker sessions route multiple activities to the same worker instance, en
 ### Basic Usage
 
 ```python
-from mistralai_workflows import run_sticky_worker_session
+from mistralai.workflows import run_sticky_worker_session
 
-# Worker-level state
+## Worker-level state
 _loaded_model = None
 
 @workflows.activity(sticky_to_worker=True)
@@ -350,5 +353,5 @@ class MultiBatchWorkflow:
 
 ## Next Steps
 
-- [Workflows Guide](workflows.mdx) - Learn how to orchestrate activities
-- [Observability Guide](observability.mdx) - Monitor and trace your activities
+- [Workflows Guide](workflows) - Learn how to orchestrate activities
+- [Observability Guide](observability) - Monitor and trace your activities

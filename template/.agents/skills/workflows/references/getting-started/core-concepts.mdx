@@ -1,6 +1,5 @@
 ---
 id: core-concepts
-sidebar_label: Core Concepts
 title: Core Concepts
 sidebar_position: 4
 ---
@@ -14,11 +13,11 @@ Workflows provides a robust framework for building distributed applications thro
 Workflows define the high-level business logic and coordination of your application.
 
 ```python
-@workflows.workflow.define(workflow_name="data_pipeline")
+@workflows.workflow.define(name="data_pipeline")
 class DataProcessingWorkflow:
     @workflows.workflow.entrypoint
     async def run(self, raw_data: str) -> dict:
-        # Parallel execution using asyncio.gather
+        # Clean the data before parallel processing
         cleaned_data_result = await clean_data(raw_data)
 
         # Run activities in parallel
@@ -28,7 +27,7 @@ class DataProcessingWorkflow:
         )
 
         # For large-scale parallel processing, use the concurrency framework
-        # [Learn more about concurrency patterns](../guides/concurrency.mdx)
+        # [Learn more about concurrency patterns](../guides/concurrency)
 
         return await generate_report(analysis_result, transformed_data)
 ```
@@ -77,19 +76,6 @@ async def main():
     ])
 ```
 
-### Getting Started: One Worker, One Workspace
-
-**For most development and testing, create a dedicated workspace in the [Mistral Console](https://console.mistral.ai/) and run a single worker:**
-
-```bash
-MISTRAL_API_KEY=your_workspace_key uv run python my_workflow.py
-```
-
-This is the recommended approach for:
-- Learning and experimenting
-- Local development
-- Simple production workloads
-
 ### Scaling with Multiple Workers
 
 When you need more throughput or want to test different code simultaneously, you can run multiple workers. Here are the common patterns:
@@ -104,6 +90,7 @@ graph TD
 ```
 
 **Pattern 1: Horizontal Scaling (Same code, more capacity)**
+
 - Multiple workers running identical code
 - Same namespace (same API key)
 - Same task queue
@@ -111,33 +98,35 @@ graph TD
 - Use case: Production workloads needing more throughput
 
 ```bash
-# Worker 1, 2, 3... all identical
+## Worker 1, 2, 3... all identical
 MISTRAL_API_KEY=prod_key uv run python my_workflow.py
 ```
 
 **Pattern 2: Environment Separation (Dev/Staging/Prod)**
+
 - Different workspaces for different environments
 - Each environment gets its own namespace
 - Complete isolation between environments
 
 ```bash
-# Dev workspace
+## Dev workspace
 MISTRAL_API_KEY=dev_workspace_key uv run python my_workflow.py
 
-# Prod workspace
+## Prod workspace
 MISTRAL_API_KEY=prod_workspace_key uv run python my_workflow.py
 ```
 
 **Pattern 3: Testing Different Code (Same workspace)**
+
 - Same workspace (same namespace)
 - Different task queues for isolation
 - Use case: Testing changes without affecting running workers
 
 ```bash
-# Stable version
+## Stable version
 MISTRAL_API_KEY=workspace_key uv run python my_workflow.py
 
-# Testing changes
+## Testing changes
 TEMPORAL_TASK_QUEUE=testing MISTRAL_API_KEY=workspace_key uv run python my_workflow_v2.py
 ```
 
@@ -148,11 +137,13 @@ TEMPORAL_TASK_QUEUE=testing MISTRAL_API_KEY=workspace_key uv run python my_workf
 Workers using the same API key share the same namespace
 
 **What could happen:**
+
 - Version conflicts: Different code versions handling the same workflows
 - Unpredictable behavior: Any worker can pick up any task
 - Hard to debug: Can't trace which worker executed what
 
 **How to avoid conflicts:**
+
 - For different environments → Use separate workspaces (different namespaces)
 - For testing changes → Use different task queues on the same workspace
 - For scaling → Use same workspace, same task queue, same code
@@ -176,3 +167,26 @@ Workers using the same API key share the same namespace
 | Workflow  | Orchestration  | Worker process       | Long-running | More workers = more concurrent workflows |
 | Activity  | Actual work    | Any available worker | Short-lived  | More workers = more parallel execution   |
 | Worker    | Execution      | Your infrastructure  | Long-running | Horizontal scaling unit                  |
+
+## Executions vs Runs
+
+Understanding the distinction between **Executions** and **Runs** helps clarify the API behavior.
+
+### Execution
+
+An **Execution** represents a workflow invocation with a unique `execution_id`. When you call action endpoints like `GET /executions/{id}`, `POST /executions/{id}/terminate`, or `POST /executions/{id}/signals`, you interact with the **latest run** of that execution.
+
+### Run
+
+A **Run** is a single attempt within an execution. When a workflow is reset or retried, a new run is created for the same execution. Key points:
+
+- **1 Execution = 1+ Runs**: An execution can have multiple runs over its lifetime
+- **Only 1 active run at a time**: For any execution, only one run can be active (RUNNING) at any moment
+- **Action endpoints target latest run**: This is Temporal's default behavior and ensures you always interact with the current state
+
+### API Endpoints
+
+- `GET /v1/workflows/runs` - List all workflow runs (preferred)
+- `GET /v1/workflows/executions` - **Deprecated** - Legacy alias for `/runs`
+- `GET /v1/workflows/executions/{id}` - Get execution details (targets latest run)
+- Action endpoints (`/terminate`, `/signals`, `/queries`, etc.) - Target latest run

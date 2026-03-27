@@ -1,6 +1,5 @@
 ---
 id: conversational-workflows
-sidebar_label: Conversational Workflows
 title: Conversational Workflows
 sidebar_position: 9
 ---
@@ -15,16 +14,15 @@ interact with it by providing inputs during its execution, and follow its progre
 To use Conversational workflow features, install the Mistral plugin:
 
 ```bash
-uv add mistralai-workflows[mistralai]
+uv add 'mistralai-workflows[mistralai]'
 ```
 
 The simplest conversational workflow sends an assistant message to the user, then waits for their response.
 Extend `InteractiveWorkflow` and use `send_assistant_message()` followed by `wait_for_input()` with `ChatInput`:
 
 ```python
-import mistralai_workflows as workflows
-import mistralai_workflows.plugins.mistralai as workflows_mistralai
-
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
 
 @workflows.workflow.define(
     name="greeting-workflow",
@@ -51,7 +49,7 @@ class GreetingWorkflow(workflows.InteractiveWorkflow):
         )
 ```
 
-`send_assistant_message()` displays a message to the user in the chat interface. `ChatInput()` pauses the workflow and waits for the user to respond. You can optionally pass a prompt to `ChatInput()` to provide additional context.
+`send_assistant_message()` displays a message to the user in the chat interface. It also accepts an optional `canvas` keyword argument to include a `CanvasResource` alongside the text (see [Canvas Editing](#canvas-editing-human-in-the-loop)). `ChatInput()` pauses the workflow and waits for the user to respond. You can optionally pass a `prompt` to `ChatInput()` to provide additional context (in placeholder) and `suggestions` to offer pre-filled options that users can select directly.
 
 ### Timeout
 
@@ -60,7 +58,7 @@ class GreetingWorkflow(workflows.InteractiveWorkflow):
 ```python
 from datetime import timedelta
 
-# Wait for user response, but time out after 5 minutes
+## Wait for user response, but time out after 5 minutes
 user_input = await self.wait_for_input(
     workflows_mistralai.ChatInput(),
     timeout=timedelta(minutes=5),
@@ -76,18 +74,18 @@ Wrap the call in a `try`/`except asyncio.TimeoutError` block to handle the timeo
 For workflows that need structured form input with typed fields, validation, and custom UI rendering, use `FormInput` instead of `ChatInput`:
 
 ```python
-from datetime import datetime
+from datetime import date, datetime
 
-import mistralai_workflows as workflows
-import mistralai_workflows.plugins.mistralai as workflows_mistralai
-from mistralai_workflows.plugins.mistralai.lechat import (
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+from mistralai.workflows.conversational import (
     FormInput,
     TextField,
     NumberField,
+    DateField,
     DateTimeField,
     SingleChoice,
 )
-
 
 class ExpenseForm(FormInput):
     """Structured form for expense submission."""
@@ -106,12 +104,12 @@ class ExpenseForm(FormInput):
         ],
         description="Expense category",
     )
-    expense_date: datetime = DateTimeField(description="Date of expense")
+    expense_date: date = DateField(description="Date of expense")
+    due_date: datetime = DateTimeField(description="Reimbursement due date")
     receipt_id: str = TextField(
         description="Receipt ID",
         pattern=r"^RCP-\d{6}$",
     )
-
 
 @workflows.workflow.define(
     name="expense-submission-workflow",
@@ -131,6 +129,7 @@ class ExpenseSubmissionWorkflow(workflows.InteractiveWorkflow):
 - Amount: ${expense.amount:.2f}
 - Category: {expense.category}
 - Date: {expense.expense_date.isoformat()}
+- Due date: {expense.due_date.isoformat()}
 - Receipt: {expense.receipt_id}"""
 
         return workflows_mistralai.ChatAssistantWorkflowOutput(
@@ -145,7 +144,9 @@ class ExpenseSubmissionWorkflow(workflows.InteractiveWorkflow):
 | `TextField`     | Text input       | `description`, `pattern` (optional regex)                                     |
 | `NumberField`   | Numeric input    | `description`, `minimum`, `maximum`, `exclusive_minimum`, `exclusive_maximum` |
 | `DateTimeField` | Date/time picker | `description`                                                                 |
+| `DateField`     | Date picker      | `description`                                                                 |
 | `SingleChoice`  | Dropdown/select  | `options` (list of tuples or strings), `description`                          |
+| `MultiChoice`   | Multi-select     | `options` (list of tuples or strings), `description`                          |
 | `FileField`     | File upload      | `description`, `multiple` (default `False`)                                   |
 
 ### TextField
@@ -181,10 +182,18 @@ from datetime import datetime
 scheduled_at: datetime = DateTimeField(description="Schedule date and time")
 ```
 
+### DateField
+
+```python
+from datetime import date
+
+scheduled_at: date = DateField(description="Schedule date")
+```
+
 ### SingleChoice
 
 ```python
-# With labels (value, display_label)
+## With labels (value, display_label)
 priority: str = SingleChoice(
     options=[
         ("low", "Low Priority"),
@@ -194,22 +203,42 @@ priority: str = SingleChoice(
     description="Select priority",
 )
 
-# Simple string options (value = label)
+## Simple string options (value = label)
 status: str = SingleChoice(
     options=["pending", "approved", "rejected"],
     description="Status",
 )
 ```
 
+### MultiChoice
+
+```python
+## With labels (value, display_label)
+tags: list[str] = MultiChoice(
+    options=[
+        ("frontend", "Frontend"),
+        ("backend", "Backend"),
+        ("infra", "Infrastructure"),
+    ],
+    description="Select applicable tags",
+)
+
+## Simple string options (value = label)
+colors: list[str] = MultiChoice(
+    options=["red", "green", "blue"],
+    description="Pick colors",
+)
+```
+
 ### FileField
 
 ```python
-from mistralai_workflows.plugins.mistralai.lechat import FileField
+from mistralai.workflows.conversational import FileField
 
-# Single file upload
+## Single file upload
 document: str = FileField(description="Upload a document")
 
-# Multiple file uploads
+## Multiple file uploads
 attachments: list[str] = FileField(description="Upload files", multiple=True)
 ```
 
@@ -224,9 +253,8 @@ For workflows that need a simple single-choice confirmation with direct submit, 
 `ConfirmationInput` provides a list of options that should be rendered as buttons. Selection of an option should immediately submit the form:
 
 ```python
-import mistralai_workflows as workflows
-import mistralai_workflows.plugins.mistralai as workflows_mistralai
-
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
 
 @workflows.workflow.define(
     name="type-selection-workflow",
@@ -268,9 +296,8 @@ The returned object has a `choice` property containing the selected option value
 `AcceptDeclineConfirmation` is a specialized confirmation with two options: accept and decline. Clients can render this as a standard validation UI with keyboard shortcuts for quick responses:
 
 ```python
-import mistralai_workflows as workflows
-import mistralai_workflows.plugins.mistralai as workflows_mistralai
-
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
 
 @workflows.workflow.define(
     name="approval-workflow",
@@ -320,9 +347,8 @@ else:
 Display a checklist of steps with real-time status updates using `TodoList`:
 
 ```python
-import mistralai_workflows as workflows
-import mistralai_workflows.plugins.mistralai as workflows_mistralai
-
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
 
 @workflows.workflow.define(
     name="expense-processing-workflow",
@@ -383,7 +409,7 @@ async with item:
 
 ```python
 await item.set_status("in_progress")
-# ... do work ...
+## ... do work ...
 await item.set_status("done")
 ```
 
@@ -403,9 +429,8 @@ Use manual control when you need to update status at specific points, handle con
 When using agents with `RemoteSession(stream=True)`, responses are automatically streamed to the UI as custom events. No additional code is needed:
 
 ```python
-import mistralai_workflows as workflows
-import mistralai_workflows.plugins.mistralai as workflows_mistralai
-
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
 
 @workflows.workflow.define(
     name="expense-analysis-workflow",
@@ -453,9 +478,8 @@ When `stream=True`, the agent's text output is streamed token-by-token to the UI
 Return rich content like markdown, code, or diagrams using `ResourceOutput`:
 
 ```python
-import mistralai_workflows as workflows
-import mistralai_workflows.plugins.mistralai as workflows_mistralai
-
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
 
 @workflows.workflow.define(
     name="expense-report-workflow",
@@ -481,8 +505,6 @@ pie title Expenses by Category
         )
 
         resource = workflows_mistralai.CanvasResource(
-            uri=f"expense-chart-{department}",
-            mimeType="application/vnd.mistral.canvas",
             canvas=canvas,
         )
 
@@ -506,15 +528,348 @@ pie title Expenses by Category
 | `code`          | Code with syntax highlighting |
 | `mermaid`       | Mermaid diagrams              |
 
+## Canvas Editing (Human-in-the-Loop)
+
+You can send a canvas mid-workflow using `send_assistant_message()` and then let the user edit it.
+The `canvas_uri` passed to `CanvasInput` must match the `uri` of a `CanvasResource` output from a previous step.
+
+```python
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+from mistralai.workflows.conversational import CanvasInput
+
+@workflows.workflow.define(
+    name="report-review-workflow",
+    workflow_display_name="Report Review",
+    workflow_description="Generate a report and let the user edit it",
+)
+class ReportReviewWorkflow(workflows.InteractiveWorkflow):
+    @workflows.workflow.entrypoint
+    async def run(self) -> workflows_mistralai.ChatAssistantWorkflowOutput:
+        # Send a canvas to the user as an assistant message
+        canvas_resource = workflows_mistralai.CanvasResource(
+            canvas=workflows_mistralai.CanvasPayload(
+                type="text/markdown",
+                title="Weekly Report",
+                content="# Weekly Report\n\n## Summary\n\nTODO: fill in",
+            ),
+        )
+        await workflows_mistralai.send_assistant_message(
+            "Here is your report draft. You can review and edit it below.",
+            canvas=canvas_resource,
+        )
+
+        # Wait for the user to edit the canvas
+        edited = await self.wait_for_input(
+            CanvasInput(canvas_uri=canvas_resource.uri, prompt="Any feedback?"),
+            label="Review & Edit Report",
+        )
+
+        # Use the edited content
+        return workflows_mistralai.ChatAssistantWorkflowOutput(
+            content=[
+                workflows_mistralai.TextOutput(text="Report finalized!"),
+                workflows_mistralai.ResourceOutput(
+                    resource=workflows_mistralai.CanvasResource(
+                        canvas=workflows_mistralai.CanvasPayload(
+                            type="text/markdown",
+                            title=edited.canvas.title,
+                            content=edited.canvas.content,
+                        ),
+                    )
+                ),
+            ]
+        )
+```
+
+`CanvasInput` returns a model with:
+
+- `canvas.title` — the title of the edited canvas
+- `canvas.content` — the edited content
+- `chatInput` — optional chat message (only present when `prompt` is provided and the user sends a message)
+
+## Rich UI Components
+
+Workflows can render rich, interactive UI components in the chat interface using the design system component library. Components are defined as Python objects and sent as `UIComponentResource` resources.
+
+### Basic Usage
+
+```python
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+from mistralai.workflows.conversational_ui_components import (
+    Badge,
+    Card,
+    Column,
+    Markdown,
+    Row,
+)
+
+@workflows.workflow.define(
+    name="report-workflow",
+    workflow_display_name="Report",
+    workflow_description="Generate a rich UI report",
+)
+class ReportWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self) -> workflows_mistralai.ChatAssistantWorkflowOutput:
+        report = Card(
+            title="Summary",
+            children=[
+                Row(
+                    children=[
+                        Markdown(content="**Score:** 0.82"),
+                        Badge(variant="success", children="Pass"),
+                    ],
+                ),
+            ],
+        )
+
+        await workflows_mistralai.send_assistant_message(
+            [
+                workflows_mistralai.TextOutput(text="Here is your report:"),
+                workflows_mistralai.ResourceOutput(
+                    resource=workflows_mistralai.UIComponentResource(component=report),
+                ),
+            ]
+        )
+
+        return workflows_mistralai.ChatAssistantWorkflowOutput(
+            content=[
+                workflows_mistralai.ResourceOutput(
+                    resource=workflows_mistralai.UIComponentResource(component=report),
+                ),
+            ],
+        )
+```
+
+### Available Components
+
+All components are imported from `mistralai.workflows.conversational_ui_components`.
+
+| Component    | Description                                   | Key Props                                                             |
+| ------------ | --------------------------------------------- | --------------------------------------------------------------------- |
+| `Alert`      | Important messages with severity levels       | `title`, `variant` (info/warning/error/success), `children`           |
+| `Avatar`     | User avatar image                             | `src`, `alt`, `text`, `size`                                          |
+| `Badge`      | Small label for status indicators             | `variant` (default/primary/success/warning/error), `size`, `children` |
+| `ButtonLink` | Link styled as a button                       | `href`, `variant`, `size`, `external`, `children`                     |
+| `Card`       | Container with optional title and description | `title`, `description`, `padding`, `children`                         |
+| `Chart`      | Line or bar chart                             | `variant` (line/bar), `data`, `xAxis`, `yAxis`, `title`               |
+| `Column`     | Vertical layout container                     | `alignment`, `distribution`, `gap`, `children`                        |
+| `Image`      | Image display                                 | `src`, `alt`, `size`                                                  |
+| `Markdown`   | Markdown-formatted text                       | `content`                                                             |
+| `PieChart`   | Pie chart with labeled segments               | `data`, `title`                                                       |
+| `Row`        | Horizontal layout container                   | `alignment`, `distribution`, `gap`, `wrap`, `children`                |
+| `Tooltip`    | Additional information on hover               | `trigger`, `children`                                                 |
+
+### Nesting Components
+
+Components that accept `children` can contain other components, allowing you to build complex layouts:
+
+```python
+from mistralai.workflows.conversational_ui_components import (
+    Card,
+    Chart,
+    Column,
+    Row,
+)
+
+layout = Row(
+    children=[
+        Card(
+            title="Revenue",
+            children=[
+                Chart(
+                    variant="line",
+                    xAxis="month",
+                    yAxis=["actual", "target"],
+                    data=[
+                        {"month": "Jan", "actual": 100, "target": 120},
+                        {"month": "Feb", "actual": 140, "target": 130},
+                        {"month": "Mar", "actual": 160, "target": 140},
+                    ],
+                ),
+            ],
+        ),
+        Card(
+            title="Distribution",
+            children=[
+                Chart(
+                    variant="bar",
+                    xAxis="category",
+                    yAxis="count",
+                    data=[
+                        {"category": "A", "count": 42},
+                        {"category": "B", "count": 28},
+                        {"category": "C", "count": 15},
+                    ],
+                ),
+            ],
+        ),
+    ],
+)
+```
+
+## Tool UI States
+
+Tool UI States provide optional visual representations of tool execution in the chat interface. When attached to `ChatAssistantWorkingTask`, they enable specialized UI feedback for different types of tool operations, allowing workflows to display the status and results of tool calls in a structured, user-friendly way.
+
+### Tool UI State Types
+
+There are three types of tool UI states:
+
+#### File Tool UI State
+
+Represents file operations such as creating, replacing, or deleting files:
+
+```python
+from mistralai.workflows.conversational import (
+    FileToolUIState,
+    CreateFileOperation,
+    ReplaceFileOperation,
+    DeleteFileOperation,
+)
+
+## Create a file
+create_state = FileToolUIState(
+    toolCallId="tc-1",
+    operations=[
+        CreateFileOperation(
+            uri="file:///workspace/new.py",
+            content="print('Hello World')"
+        )
+    ],
+)
+
+## Replace file content
+replace_state = FileToolUIState(
+    toolCallId="tc-2",
+    operations=[
+        ReplaceFileOperation(
+            uri="file:///workspace/main.py",
+            fileContentBefore="old content",
+            blocks=[SearchReplaceBlock(search="old", replace="new")],
+        )
+    ],
+)
+
+## Delete a file
+delete_state = FileToolUIState(
+    toolCallId="tc-3",
+    operations=[
+        DeleteFileOperation(uri="file:///workspace/old.py")
+    ],
+)
+```
+
+#### Generic Tool UI State
+
+Represents generic tool execution with various status states:
+
+```python
+from mistralai.workflows.conversational import (
+    GenericToolUIState,
+    ToolResultRunning,
+    ToolResultSuccess,
+    ToolResultFailed,
+)
+
+## Tool is running
+running_state = GenericToolUIState(
+    toolCallId="tc-1",
+    name="bash",
+    arguments={"command": "ls -la"},
+    result=ToolResultRunning(),
+)
+
+## Tool completed successfully
+success_state = GenericToolUIState(
+    toolCallId="tc-2",
+    name="grep",
+    arguments={"pattern": "TODO"},
+    result=ToolResultSuccess(value={"matches": ["line1", "line2"]}),
+)
+
+## Tool failed
+failed_state = GenericToolUIState(
+    toolCallId="tc-3",
+    name="bash",
+    arguments={"command": "false"},
+    result=ToolResultFailed(error="exit code 1"),
+)
+```
+
+#### Command Tool UI State
+
+Represents command execution with running/success/failed states:
+
+```python
+from mistralai.workflows.conversational import (
+    CommandToolUIState,
+    CommandResultRunning,
+    CommandResultSuccess,
+    CommandResultFailed,
+)
+
+## Command is running
+running_state = CommandToolUIState(
+    toolCallId="tc-1",
+    command="npm install",
+    result=CommandResultRunning(),
+)
+
+## Command completed successfully
+success_state = CommandToolUIState(
+    toolCallId="tc-2",
+    command="pytest",
+    result=CommandResultSuccess(output="All tests passed"),
+)
+
+## Command failed
+failed_state = CommandToolUIState(
+    toolCallId="tc-3",
+    command="invalid-command",
+    result=CommandResultFailed(error="Command not found"),
+)
+```
+
+### Using Tool UI States in Working Tasks
+
+Tool UI States can be attached to `ChatAssistantWorkingTask` to provide visual feedback during tool execution:
+
+```python
+from mistralai.workflows.conversational import ChatAssistantWorkingTask
+
+## Show a working task with file operations
+task = ChatAssistantWorkingTask(
+    title="Creating file",
+    content="Generating new.py",
+    toolUIState=FileToolUIState(
+        toolCallId="tc-1",
+        operations=[CreateFileOperation(uri="file:///workspace/new.py", content="print('hi')")],
+    ),
+)
+
+## Show a working task with command execution
+command_task = ChatAssistantWorkingTask(
+    title="Running tests",
+    content="Executing pytest",
+    toolUIState=CommandToolUIState(
+        toolCallId="tc-2",
+        command="pytest",
+        result=CommandResultRunning(),
+    ),
+)
+```
+
 ## Publish in Le Chat
 
 To publish a conversational workflow as an assistant in Le Chat (Mistral's chat interface), your workflow must return a `ChatAssistantWorkflowOutput`.
 The output will not be displayed in Le Chat, but we enforce a common interface for inter-operability.
 
 ```python
-import mistralai_workflows as workflows
-import mistralai_workflows.plugins.mistralai as workflows_mistralai
-
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
 
 @workflows.workflow.define(
     name="expense-summary-workflow",
@@ -531,15 +886,52 @@ class ExpenseSummaryWorkflow:
         )
 ```
 
+### Tagging Input Variants
+
+When a workflow accepts a union of input types, clients may need a way to know which variant to use. The `@input_tag` decorator adds an `x-input-tag` field to a model's JSON schema so clients can identify and select the right one.
+
+```python
+from pydantic import BaseModel
+
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+from mistralai.workflows.plugins.mistralai import input_tag
+
+class FullParams(BaseModel):
+    config: str
+    options: dict[str, str]
+
+@input_tag("simplified")
+class SimpleParams(BaseModel):
+    prompt: str
+
+@workflows.workflow.define(
+    name="multi-client-workflow",
+    workflow_display_name="Multi-Client",
+)
+class MultiClientWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, params: FullParams | SimpleParams) -> workflows_mistralai.ChatAssistantWorkflowOutput:
+        if isinstance(params, SimpleParams):
+            resolved = params.prompt
+        else:
+            resolved = params.config
+
+        return workflows_mistralai.ChatAssistantWorkflowOutput(
+            content=[workflows_mistralai.TextOutput(text=f"Received: {resolved}")]
+        )
+```
+
+`SimpleParams.model_json_schema()` now contains `"x-input-tag": "simplified"`. Clients inspect the union members in the workflow's `input_schema` and select the variant whose tag they recognise.
+
 ### Error Handling
 
 To signal that a workflow has failed, set `isError=True` on the output.
 The text content is used as the error message displayed to the user, and the workflow is marked as failed in the conversation:
 
 ```python
-import mistralai_workflows as workflows
-import mistralai_workflows.plugins.mistralai as workflows_mistralai
-
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
 
 @workflows.workflow.define(
     name="expense-validation-workflow",
@@ -578,9 +970,8 @@ return workflows_mistralai.ChatAssistantWorkflowOutput(
 Here's a full expense approval workflow combining todo list, user input, and streaming agent analysis:
 
 ```python
-import mistralai_workflows as workflows
-import mistralai_workflows.plugins.mistralai as workflows_mistralai
-
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
 
 @workflows.workflow.define(
     name="full-expense-workflow",
@@ -626,7 +1017,13 @@ class FullExpenseWorkflow(workflows.InteractiveWorkflow):
             # Step 2: Manager Review (using context manager)
             async with review_item:
                 decision = await self.wait_for_input(
-                    workflows_mistralai.ChatInput("Do you approve or reject this expense? Please explain.")
+                    workflows_mistralai.ChatInput(
+                        "Do you approve or reject this expense? Please explain.",
+                        suggestions=[
+                            [workflows_mistralai.TextChunk(text="Yes, approve this expense")],
+                            [workflows_mistralai.TextChunk(text="Reject")],
+                        ],
+                    )
                 )
 
             # Step 3: Process (using manual status control for conditional logic)
@@ -641,7 +1038,6 @@ class FullExpenseWorkflow(workflows.InteractiveWorkflow):
         return workflows_mistralai.ChatAssistantWorkflowOutput(
             content=[workflows_mistralai.TextOutput(text=result)]
         )
-
 
 if __name__ == "__main__":
     import asyncio

@@ -98,7 +98,7 @@ BASE_TASKS = {
 import logging
 from typing import Any, ClassVar, Generic, TypeVar
 
-import mistralai_workflows as workflows
+import mistralai.workflows as workflows
 
 from .process_utils import Context, OnError, RegisteredTask, StepSpec
 from .utils import get_child_workflow_execution_id

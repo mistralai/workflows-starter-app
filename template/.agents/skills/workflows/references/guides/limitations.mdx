@@ -1,6 +1,5 @@
 ---
 id: limitations
-sidebar_label: Limitations
 title: System Limitations
 sidebar_position: 3
 ---
@@ -28,28 +27,28 @@ _Why?_ Workflows are designed for orchestration rather than heavy computation. T
 - Large data validation
 
 ```python
-# ❌ Wrong - Should be in an activity
+## ❌ Wrong - Should be in an activity
 Dataset.model_validate(large_amount_of_data)
 ```
 
 - Complex computations
 
 ```python
-# ❌ Wrong - Should be in an activity
+## ❌ Wrong - Should be in an activity
 sum([x for x in range(1000000)])
 ```
 
 - Cryptographic operations
 
 ```python
-# ❌ Wrong - Should be in an activity
+## ❌ Wrong - Should be in an activity
 hashlib.sha256(large_data).hexdigest()
 ```
 
 - Heavy data transformations
 
 ```python
-# ❌ Wrong - Should be in an activity
+## ❌ Wrong - Should be in an activity
 map(lambda x: x * 2, large_list)
 ```
 
@@ -62,14 +61,14 @@ map(lambda x: x * 2, large_list)
 - Network calls (HTTP, gRPC, database queries)
 
 ```python
-# ❌ Wrong - Should be in an activity
+## ❌ Wrong - Should be in an activity
 await conn.execute("SELECT * FROM users")
 ```
 
 - File system operations
 
 ```python
-# ❌ Wrong - Should be in an activity
+## ❌ Wrong - Should be in an activity
 async with aiofiles.open("file.txt", mode="r") as f:
      contents = await f.read()
 ```
@@ -77,7 +76,7 @@ async with aiofiles.open("file.txt", mode="r") as f:
 - Any external system interactions
 
 ```python
-# ❌ Wrong - Should be in an activity
+## ❌ Wrong - Should be in an activity
 await client.send_message("Hello")
 ```
 
@@ -87,7 +86,7 @@ _Why?_ Workflow code may be replayed during recovery, and I/O operations would v
 
 Workflows can safely perform these operations that don't block execution:
 
-- Activity execution (which can run much longer, [see Activity Execution Limits](#execution-constraints-1))
+- Activity execution (which can run much longer, [see Activity Limitations](#activity-limitations))
   ```python
   # ✅ Correct - Activity can run for hours
   result = await my_activity(...)
@@ -119,7 +118,7 @@ Workflow code must be deterministic - given the same activity history and inputs
 - Generating random numbers
 
 ```python
-# ❌ Wrong - Non-deterministic
+## ❌ Wrong - Non-deterministic
 if random.random() > 0.5:
    ...
 else:
@@ -129,7 +128,7 @@ else:
 - Getting current time
 
 ```python
-# ❌ Wrong - Non-deterministic
+## ❌ Wrong - Non-deterministic
 import time
 
 await my_activity(time.time())
@@ -138,7 +137,7 @@ await my_activity(time.time())
 - Reading environment variables
 
 ```python
-# ❌ Wrong - Non-deterministic
+## ❌ Wrong - Non-deterministic
 if os.getenv("ENV") == "prod":
    ...
 ```
@@ -147,7 +146,7 @@ must be performed in activities. While activities themselves can produce differe
 
 ### Maximum Execution History
 
-The execution history for each workflow is capped at 51,200 events or 50MB per workflow execution. This limit is again due to temporal's current constraints. In order to avoid hitting this limit, we recommend using `workflows.execute_activities_in_parallel`, that allows you to execute large amounts of activities in parallel, while having the lowest footprint on the execution history. [Learn more about concurrency patterns](concurrency.mdx).
+The execution history for each workflow is capped at 51,200 events or 50MB per workflow execution. This limit is again due to temporal's current constraints. In order to avoid hitting this limit, we recommend using `workflows.execute_activities_in_parallel`, that allows you to execute large amounts of activities in parallel, while having the lowest footprint on the execution history. [Learn more about concurrency patterns](concurrency).
 
 ## Activity Limitations
 

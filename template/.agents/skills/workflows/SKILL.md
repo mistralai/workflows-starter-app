@@ -1,4 +1,4 @@
---- 
+---
 name: workflows
 description: Framework for building durable workflows with orchestrated activities, used for background jobs, multi-step pipelines, scheduled tasks, LLM agents, or any process requiring fault tolerance, retries, and long-running execution. This skill provides comprehensive documentation and guidance for working with the Mistral Workflows framework.
 license: Complete terms in LICENSE.txt
@@ -19,47 +19,43 @@ The documentation is organized into several categories:
 ### Getting Started
 
 - **[Introduction](references/getting-started/introduction.mdx)**: Overview of Mistral Workflows and its core architecture
-- **[Installation](references/getting-started/installation.mdx)**: Guide to installing and setting up the Workflows framework
-- **[Core Concepts](references/getting-started/core-concepts.mdx)**: Explanation of workflows, activities, and workers
-- **[Python SDK](references/getting-started/python-sdk.mdx)**: Documentation for the Python SDK and client library
+- **[Installation](references/getting-started/installation.mdx)**: Guide to installing and setting up the Workflows framework (CLI scaffolding, optional deps)
+- **[Core Concepts](references/getting-started/core-concepts.mdx)**: Workflows, activities, workers, executions vs runs
+- **[Python SDK](references/getting-started/python-sdk.mdx)**: Documentation for the Python SDK and WorkflowsClient
 - **[Your First Workflow](references/getting-started/your-first-workflow.mdx)**: Step-by-step guide to creating your first workflow
-- **[Useful Links](references/getting-started/useful-links.mdx)**: Collection of helpful resources and references
 
 ### Guides
 
-- **[Workflows](references/guides/workflows.mdx)**: Detailed guide on creating and managing workflows
-- **[Activities](references/guides/activities.mdx)**: Comprehensive documentation on activities and their implementation
-- **[Concurrency](references/guides/concurrency.mdx)**: Guide to handling concurrent workflow execution
-- **[Dependency Injection](references/guides/dependency-injection.mdx)**: Explanation of dependency injection patterns
-- **[Durable Agents](references/guides/durable-agents.mdx)**: Documentation on building durable AI agents
-- **[Handling Large Data](references/guides/handling-large-data.mdx)**: Strategies for working with large datasets
-- **[Limitations](references/guides/limitations.mdx)**: Known limitations and constraints of the framework
-- **[Local Execution](references/guides/local-execution.mdx)**: Guide to running workflows locally for development
-- **[Observability](references/guides/observability.mdx)**: Documentation on monitoring and observability features
-- **[Scheduling](references/guides/scheduling.mdx)**: Guide to scheduling workflows and tasks
-- **[Signals, Queries, and Updates](references/guides/signals-queries-updates.mdx)**: Documentation on workflow communication patterns
-- **[Streaming](references/guides/streaming.mdx)**: Guide to streaming data in workflows
-- **[Streaming Consumption](references/guides/streaming-consumption.mdx)**: Documentation on consuming streaming data
-- **[Workflows Exception Handling](references/guides/workflows-exception.mdx)**: Guide to exception handling in workflows
-- **[Workflows Plugins](references/guides/workflows-plugins.mdx)**: Documentation on extending workflows with plugins
+- **[Workflows](references/guides/workflows.mdx)**: Creating workflows, determinism enforcement (sandbox), input types, timeouts, signals/queries/updates, child workflows, continue-as-new
+- **[Activities](references/guides/activities.mdx)**: Timeouts, retries, heartbeats, local activities, sticky sessions, nested activities
+- **[Workflows Exception Handling](references/guides/workflows-exception.mdx)**: WorkflowsException, ErrorCode enum, factory methods
+- **[Error Codes](references/guides/error-codes.mdx)**: API error codes WF_1000-WF_1600 with HTTP status, description, and resolution
+- **[Signals, Queries, and Updates](references/guides/signals-queries-updates.mdx)**: Workflow communication patterns with input validation
+- **[Scheduling](references/guides/scheduling.mdx)**: Cron expressions, ScheduleDefinition, SchedulePolicy, overlap handling
+- **[Dependency Injection](references/guides/dependency-injection.mdx)**: FastAPI-style Depends() pattern
+- **[Streaming](references/guides/streaming.mdx)**: Task API, token streaming, progress updates
+- **[Streaming Consumption](references/guides/streaming-consumption.mdx)**: WorkflowsClient.stream_events(), NATS subjects, SSE API
+- **[Concurrency](references/guides/concurrency.mdx)**: execute_activities_in_parallel() with List/Chain/Offset executors
+- **[Rate Limiting](references/guides/rate-limiting.mdx)**: Distributed rate limiting across workers
+- **[Handling Large Data](references/guides/handling-large-data.mdx)**: OffloadableField, blob storage (S3/Azure/GCS)
+- **[Payload Encoding](references/guides/payload-encoding.mdx)**: Payload offloading, AES-GCM encryption, key rotation
+- **[Observability](references/guides/observability.mdx)**: OpenTelemetry traces, trace sampling
+- **[Durable Agents](references/guides/durable-agents.mdx)**: Agent, Runner, RemoteSession/LocalSession, MCP, multi-agent handoffs
+- **[Conversational Workflows](references/guides/assist-workflows.mdx)**: InteractiveWorkflow, HITL, ChatInput/FormInput, Canvas editing, Rich UI components, Tool UI states
+- **[Local Execution](references/guides/local-execution.mdx)**: No-infra dev mode with Pydantic model params
+- **[Limitations](references/guides/limitations.mdx)**: System constraints and limits
+- **[Workflows Plugins](references/guides/workflows-plugins.mdx)**: Mistral AI plugin, Webhook plugin, Nuage plugin, custom plugins
 - **[Deployment Patterns](references/guides/_deployment-patterns.mdx)**: Best practices for deploying workflows
+- **[Migration v2 to v3](references/guides/migration-v2-to-v3.md)**: Breaking changes and upgrade steps from SDK v2 to v3
+
+### Internal References
+
+These are additional patterns and utilities not covered in the official docs:
+
 - **[Execution IDs](references/execution_ids.md)**: Generate deterministic execution IDs for child workflows
-- **[Pipeline Pattern](references/pipeline_pattern.md)**: Build multi-step workflows with declarative step definitions
+- **[Pipeline Pattern](references/pipeline_pattern.md)**: Build multi-step workflows with declarative StepSpec definitions
 - **[Progress Decorator](references/progress_decorator.md)**: Track workflow step progress with automatic event recording
 - **[Workflow Testing](references/workflow_testing.md)**: Ensure workflow classes are properly registered in workers
-
-### Appendices
-
-- **[Payload Encoding](references/appendices/payload-encoding.mdx)**: Technical details on payload encoding
-- **[Streaming](references/appendices/streaming.mdx)**: Additional information on streaming capabilities
-- **[Worker Versioning](references/appendices/worker-versioning.mdx)**: Guide to worker versioning and compatibility
-
-### Additional Resources
-
-- **[Cookbooks](references/cookbooks/index.mdx)**: Collection of practical examples and recipes
-- **[Contributing](references/guides/contributing.mdx)**: Guide to contributing to the Workflows project
-- **[Documentation Structure](references/documentation-structure.mdx)**: Overview of the documentation organization
-- **[Robots](references/robots.mdx)**: Information about robots.txt and web crawling policies
 
 ## When to Use This Skill
 
@@ -70,25 +66,22 @@ Use this skill when you need to:
 3. **Handle background jobs**: Manage asynchronous processing and task queues
 4. **Create multi-step pipelines**: Build complex workflows with multiple stages
 5. **Schedule tasks**: Set up recurring or delayed execution of workflows
-6. **Develop LLM agents**: Build AI agents that require persistent state and reliability
-7. **Ensure fault tolerance**: Implement systems that can recover from failures automatically
+6. **Develop LLM agents**: Build durable AI agents with MCP tool support
+7. **Build conversational workflows**: Create interactive workflows with HITL, forms, canvas, and rich UI
+8. **Ensure fault tolerance**: Implement systems that can recover from failures automatically
+9. **Stream events**: Real-time token streaming and progress updates via NATS
 
 ## Key Features
 
 - **Fault tolerance**: Automatic recovery from failures and retries
 - **Durable execution**: Workflows can run for extended periods (seconds to years)
-- **Deterministic behavior**: Consistent execution regardless of infrastructure failures
-- **Rich Python framework**: Easy-to-use decorators and APIs
+- **Determinism enforcement**: Sandbox-based determinism with configurable enforcement
+- **Rich Python framework**: Easy-to-use decorators and APIs (`mistralai.workflows`)
 - **Built-in observability**: Deep integration with OpenTelemetry for monitoring
+- **Streaming**: NATS-backed real-time token and progress streaming
+- **Rate limiting**: Distributed rate limiting shared across workers
+- **Dependency injection**: FastAPI-style Depends() pattern
+- **Large payload handling**: OffloadableField with S3/Azure/GCS blob storage
+- **Conversational workflows**: Interactive workflows with Le Chat integration, forms, canvas, and rich UI components
+- **Durable agents**: AI agents with MCP support, multi-agent handoffs, and persistent state
 - **Scalability**: Designed to handle complex, distributed applications
-
-## Usage Patterns
-
-The Workflows framework is particularly well-suited for:
-
-- **AI-driven workflows**: Orchestrating complex AI processes
-- **Data processing pipelines**: Managing multi-stage data transformation
-- **Background job processing**: Handling asynchronous task execution
-- **Scheduled maintenance tasks**: Running periodic system operations
-- **Long-running business processes**: Managing workflows that span extended time periods
-- **Microservices coordination**: Orchestrating interactions between multiple services

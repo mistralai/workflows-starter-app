@@ -1,6 +1,5 @@
 ---
 id: python-sdk
-sidebar_label: Python SDK
 title: Python SDK
 sidebar_position: 5
 ---
@@ -13,8 +12,8 @@ The Workflows Python SDK provides a convenient way to interact with the Workflow
 
 Before using the SDK, ensure you have:
 
-1. Followed the [installation instructions](./installation.mdx) to set up Workflows
-2. Completed the [your first workflow](./your-first-workflow.mdx) guide to run a worker with your first workflow
+1. Followed the [installation instructions](./installation) to set up Workflows
+2. Completed the [your first workflow](./your-first-workflow) guide to run a worker with your first workflow
 
 ## Getting Started
 
@@ -23,9 +22,9 @@ Before using the SDK, ensure you have:
 Initialize the client with your API credentials and namespace:
 
 ```python
-from mistralai_workflows import WorkflowsClient
+from mistralai.workflows import WorkflowsClient
 
-# Initialize client
+## Initialize client
 client = WorkflowsClient(
     base_url="https://api.mistral.ai", # For staging use https://api.globalaegis.net
     api_key="your-api-key",     # Should match your worker's `MISTRAL_API_KEY`
@@ -39,10 +38,15 @@ client = WorkflowsClient(
 Start a workflow execution with optional input data and custom execution ID:
 
 ```python
+from pydantic import BaseModel
+
+class InputData(BaseModel):
+    name: str
+
 execution_id = "custom-id-123"
 execution = await client.execute_workflow(
     workflow_identifier="simple_example_workflow",
-    input_data={"name": "MyName"},
+    input_data=InputData(name="MyName"),
     execution_id=execution_id  # Optional
 )
 ```
@@ -52,9 +56,14 @@ execution = await client.execute_workflow(
 For workflows where you need immediate results, use the synchronous execution method:
 
 ```python
+from pydantic import BaseModel
+
+class InputData(BaseModel):
+    name: str
+
 result = await client.execute_workflow_and_wait(
     workflow_identifier="simple_example_workflow",
-    input_data={"name": "MyName"},
+    input_data=InputData(name="MyName"),
     use_api_sync=True  # Recommended for most cases
 )
 ```
@@ -80,10 +89,15 @@ print(f"Current status: {status.status}")
 Send signals to running workflows to trigger specific behaviors:
 
 ```python
+from pydantic import BaseModel
+
+class SignalData(BaseModel):
+    new_value: int
+
 await client.signal_workflow(
     execution_id="your-execution-id", # Execution id of the running workflow with signal method
     signal_name="update_config", # Name of the signal method
-    input_data={"new_value": 42}
+    input_data=SignalData(new_value=42)
 )
 ```
 
@@ -104,10 +118,15 @@ print(response.result)
 Modify workflow behavior during execution:
 
 ```python
+from pydantic import BaseModel
+
+class UpdateData(BaseModel):
+    timeout: int
+
 response = await client.update_workflow(
     execution_id="your-execution-id",
     update_name="change_settings",
-    input_data={"timeout": 300}
+    input_data=UpdateData(timeout=300)
 )
 ```
 
@@ -175,7 +194,7 @@ events = await client.get_workflow_execution_trace_events(
 Set up workflows to run on a schedule:
 
 ```python
-from mistralai_workflows.models import ScheduleDefinition
+from mistralai.workflows.models import ScheduleDefinition
 schedule_id = "daily-name-schedule"
 schedule = await client.schedule_workflow(
     workflow_identifier="simple_example_workflow",
@@ -192,10 +211,10 @@ schedule = await client.schedule_workflow(
 View and manage all your scheduled workflows:
 
 ```python
-# List all schedules
+## List all schedules
 response = await client.get_schedules()
 print(f"Here are all the defined schedules: {response.schedules}")
-# Remove a schedule
+## Remove a schedule
 await client.unschedule_workflow(schedule_id=schedule_id)
 ```
 
@@ -209,7 +228,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 async def main() -> None:
-    from mistralai_workflows import WorkflowsClient
+    from mistralai.workflows import WorkflowsClient
+    from pydantic import BaseModel
+
+    class InputData(BaseModel):
+        report_type: str
 
     client = WorkflowsClient(
         base_url="https://api.mistral.ai", # For staging use https://api.globalaegis.net
@@ -218,8 +241,8 @@ async def main() -> None:
 
     # Execute and wait for workflow completion
     result = await client.execute_workflow_and_wait(
-        workflow_name="report_generator",
-        input_data={"report_type": "weekly"}
+        workflow_identifier="report_generator",
+        input_data=InputData(report_type="weekly"),
     )
 
     print(f"Workflow completed with result: {result}")
@@ -234,7 +257,7 @@ if __name__ == "__main__":
 
 Explore these related topics to deepen your understanding:
 
-- [Workflows Guide](../guides/workflows.mdx) - Learn about workflow fundamentals and design patterns
-- [Activities Guide](../guides/activities.mdx) - Learn about activity functions and their usage
-- [Scheduling](../guides/scheduling.mdx) - Advanced scheduling techniques and cron expressions
-- [Signals, Queries & Updates](../guides/signals-queries-updates.mdx) - Advanced workflow interaction patterns
+- [Workflows Guide](../guides/workflows) - Learn about workflow fundamentals and design patterns
+- [Activities Guide](../guides/activities) - Learn about activity functions and their usage
+- [Scheduling](../guides/scheduling) - Advanced scheduling techniques and cron expressions
+- [Signals, Queries & Updates](../guides/signals-queries-updates) - Advanced workflow interaction patterns

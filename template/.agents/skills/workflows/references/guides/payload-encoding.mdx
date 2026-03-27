@@ -1,6 +1,5 @@
 ---
 id: payload-encoding
-sidebar_label: Payload encoding
 title: Payload encoding
 sidebar_position: 4
 ---
@@ -29,7 +28,7 @@ To ensure data remains within the user’s infrastructure, the encoding/decoding
 
 ### PayloadEncoder
 
-The **PayloadEncoder** (`mistralai_workflows/worker`) is the core component for payload encoding/decoding.
+The **PayloadEncoder** (`mistralai/workflows/worker`) is the core component for payload encoding/decoding.
 It manages offloading, encryption, and other payload transformations, and is used by both the and **Temporal Worker**.
 
 ### Temporal Components
@@ -139,6 +138,26 @@ The encoding system provides:
 
 Payload offloading allows seamless transmission of payloads larger than 2MB by configuring a blob storage (e.g., Azure Blob Storage, S3, or GCP Cloud Storage) accessible to both client and worker code.
 
+**Prerequisites**
+
+To use payload offloading, you need to install the Workflows SDK with the appropriate cloud storage provider:
+
+```bash
+## For AWS S3
+uv add "mistralai-workflows[s3]"
+
+## For Azure Blob Storage
+uv add "mistralai-workflows[azure]"
+
+## For Google Cloud Storage
+uv add "mistralai-workflows[gcs]"
+
+## Or install all storage providers
+uv add "mistralai-workflows[storage]"
+```
+
+See the [installation guide](../getting-started/installation#cloud-storage-providers) for more details.
+
 **Limitations :warning:**
 
 - **Workflow Replay Overhead**: When replaying a workflow, all payloads are downloaded again. This can lead to:
@@ -149,7 +168,7 @@ Payload offloading allows seamless transmission of payloads larger than 2MB by c
 **Use Case**
 This feature is intended only for edge cases where large payloads are uncommon but may occasionally occur in very rare situations.
 
-For a more robust approach to handling large data exchange, prefer using the [activity field offloader](../guides/handling-large-data.mdx).
+For a more robust approach to handling large data exchange, prefer using the [activity field offloader](../guides/handling-large-data).
 
 :::info
 Blob storage bucket/container must have an **expiry policy** as payloads are not automatically deleted.
@@ -164,7 +183,7 @@ If you use the **starter-app**, use these environment variables to configure blo
 ```
 TEMPORAL_PAYLOAD_OFFLOADING__ENABLED=true
 
-# Azure:
+## Azure:
 TEMPORAL_PAYLOAD_OFFLOADING__STORAGE_CONFIG__STORAGE_PROVIDER=azure
 TEMPORAL_PAYLOAD_OFFLOADING__STORAGE_CONFIG__CONTAINER_NAME=abraxas-temporal-payloads
 TEMPORAL_PAYLOAD_OFFLOADING__STORAGE_CONFIG__AZURE_CONNECTION_STRING="XXX"
@@ -183,14 +202,14 @@ Use the following Python code to generate a 256-bit AES-GCM key:
 ```python
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
-# Generate a 256-bit (32-byte) key
+## Generate a 256-bit (32-byte) key
 key = AESGCM.generate_key(bit_length=256)
 print(f"Generated key: {key.hex()}")
 ```
 
 There are two modes:
 `full`: Encrypts every payload.
-`partial`: Encrypt only `EncryptedStrField` fields (see: `mistralai_workflows.models`)
+`partial`: Encrypt only `EncryptedStrField` fields (see: `mistralai.workflows.models`)
 
 Set the following environment variables in your .env:
 
@@ -228,5 +247,5 @@ Once you're sure no old data needs decrypting, delete the `SECONDARY_KEY` from y
 ```
 TEMPORAL_PAYLOAD_ENCRYPTION__MODE=full
 TEMPORAL_PAYLOAD_ENCRYPTION__MAIN_KEY=<NEW_KEY_HERE>
-# TEMPORAL_PAYLOAD_ENCRYPTION__SECONDARY_KEY=
+## TEMPORAL_PAYLOAD_ENCRYPTION__SECONDARY_KEY=
 ```

@@ -1,6 +1,5 @@
 ---
 id: signals-queries-updates
-sidebar_label: Signals, Queries & Updates
 title: Signals, Queries & Updates
 sidebar_position: 4
 ---
@@ -23,7 +22,7 @@ Signals allow external systems to send messages to running workflows.
 ### Basic Example
 
 ```python
-import mistralai_workflows as workflows
+import mistralai.workflows as workflows
 
 @workflows.workflow.define()
 class NotificationWorkflow:
@@ -58,7 +57,7 @@ Queries allow external systems to get the current state of a workflow.
 ### Basic Example
 
 ```python
-import mistralai_workflows as workflows
+import mistralai.workflows as workflows
 
 @workflows.workflow.define()
 class ProcessingWorkflow:
@@ -97,10 +96,10 @@ Updates allow external systems to modify workflow state and get a response. Unli
 ### Basic Example with Activity Execution
 
 ```python
-import mistralai_workflows as workflows
+import mistralai.workflows as workflows
 import asyncio
 
-# Activity definition
+## Activity definition
 @workflows.activity()
 async def process_update_data(data: str) -> str:
     # Simulate processing
@@ -141,8 +140,63 @@ class DataProcessingWorkflow:
 | Query   | Synchronous        | No             | Yes           | No                     |
 | Update  | Synchronous        | Yes            | Yes           | Yes                    |
 
+## Input Validation
+
+Signals, queries, and updates validate incoming payloads against their declared parameters. This ensures type safety and prevents unexpected data from reaching your handlers.
+
+### Automatic Schema Enforcement
+
+When you declare parameters with type annotations, the system automatically:
+
+- Validates incoming payloads match the expected types
+- **Rejects extra fields** not declared in the handler signature
+- Returns HTTP 422 (Unprocessable Entity) with descriptive error messages on validation failure
+
+```python
+@workflows.workflow.signal(name="add_notification")
+async def add_notification(self, message: str, priority: int = 1):
+    # Only 'message' and 'priority' fields are accepted
+    # Extra fields like {"message": "hi", "extra": "bad"} will be rejected
+    ...
+```
+
+### Using Pydantic Models for Complex Inputs
+
+For handlers with complex or nested input structures, define a Pydantic model:
+
+```python
+import pydantic
+
+class Address(pydantic.BaseModel):
+    street: str
+    city: str
+
+class UserProfile(pydantic.BaseModel):
+    name: str
+    address: Address
+
+@workflows.workflow.signal(name="update_profile")
+async def update_profile(self, profile: UserProfile) -> None:
+    self._profile = profile
+```
+
+When using Pydantic models, their configuration is preserved:
+
+- If you set `model_config = pydantic.ConfigDict(extra="allow")`, extra fields will be accepted
+- If you set `model_config = pydantic.ConfigDict(extra="forbid")`, extra fields are rejected (this is the default behavior for auto-generated schemas)
+
+### Validation Error Responses
+
+When validation fails, the API returns HTTP 422 with details about what went wrong:
+
+```json
+{
+  "detail": "Invalid input: Additional properties are not allowed ('unexpected_field' was unexpected)"
+}
+```
+
 ## Next Steps
 
-- [Workflow Guide](workflows.mdx) - Learn more about workflow fundamentals
-- [Activity Guide](activities.mdx) - Understand how activities complement workflows
-- [Observability Guide](observability.mdx) - Monitor your workflow interactions
+- [Workflow Guide](workflows) - Learn more about workflow fundamentals
+- [Activity Guide](activities) - Understand how activities complement workflows
+- [Observability Guide](observability) - Monitor your workflow interactions

@@ -1,6 +1,5 @@
 ---
 id: rate-limiting
-sidebar_label: Rate Limiting
 title: Rate Limiting
 sidebar_position: 7
 ---
@@ -28,7 +27,7 @@ When **a key is provided**, multiple different activities that use the same key 
 ### Example: Shared Rate-Limited API Client (No Key)
 
 ```python
-import mistralai_workflows as workflows
+import mistralai.workflows as workflows
 from mistralai import Mistral, Messages, Depends
 from pydantic import BaseModel
 

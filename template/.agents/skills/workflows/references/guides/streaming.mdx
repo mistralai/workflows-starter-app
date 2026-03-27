@@ -1,6 +1,5 @@
 ---
 id: streaming
-sidebar_label: Streaming
 title: Streaming Events
 sidebar_position: 7
 ---
@@ -21,58 +20,26 @@ NATS_HOST="nats://localhost:4222"
 ### 2. Publish from an Activity
 
 ```python
-import mistralai_workflows as workflows
-from mistralai_workflows.core.task import Task
+import mistralai.workflows as workflows
+from mistralai.workflows.core.task import Task
 
 @workflows.activity()
 async def chat_activity(messages: list) -> dict:
     initial_state = {"tokens": []}
 
-    with Task(type="token-stream", state=initial_state) as task:
+    async with Task(type="token-stream", state=initial_state) as task:
 
         async for chunk in llm.stream(messages):
             token = chunk.choices[0].delta.content
             if token:
-                task.update_state({"tokens": task.state["tokens"] + [token]})
+                await task.update_state({"tokens": task.state["tokens"] + [token]})
 
     return {"response": "".join(task.state["tokens"])}
 ```
 
 ### 3. Consume Events
 
-See [Consuming Streaming Events](streaming-consumption.mdx) for details on subscribing to events.
-
-## Publishing API
-
-### `WorkflowsClient(...).publish_stream_event()`
-
-Publish any serializable data to a named stream:
-
-```python
-# Simple value
-WorkflowsClient(...).publish_stream_event(PublishStreamEventRequest(event=StreamEvent(data="Hello", stream="greeting")))
-
-# Dictionary
-WorkflowsClient(...).publish_stream_event(
-    PublishStreamEventRequest(event=StreamEvent(data={"progress": 50}, stream="progress"))
-)
-
-# Pydantic model (auto-serialized)
-WorkflowsClient(...).publish_stream_event(
-    PublishStreamEventRequest(event=StreamEvent(data=TokenEvent(token="world"), stream="token"))
-)
-
-# With metadata
-WorkflowsClient(...).publish_stream_event(
-    PublishStreamEventRequest(
-        event=StreamEvent(
-            data={"token": "hello"},
-            stream="token",
-            metadata={"model": "mistral-large"}
-        )
-    )
-)
-```
+See [Consuming Streaming Events](streaming-consumption) for details on subscribing to events.
 
 ## Publishing Patterns
 
@@ -85,12 +52,12 @@ The most common pattern - stream tokens as they're generated:
 async def chat_activity(messages: list) -> dict:
     initial_state = {"tokens": []}
 
-    with Task(type="token-stream", state=initial_state) as task:
+    async with Task(type="token-stream", state=initial_state) as task:
 
         async for chunk in llm.stream(messages):
             token = chunk.choices[0].delta.content
             if token:
-                task.update_state({"tokens": task.state["tokens"] + [token]})
+                await task.update_state({"tokens": task.state["tokens"] + [token]})
 
     return {"response": "".join(task.state["tokens"])}
 ```
@@ -110,10 +77,10 @@ async def streaming_tokens_with_progress_activity(text: str) -> dict:
     words = text.split()
     initial_state = {"processed_words": [], "progress_idx": 0, "progress_total": len(words)}
 
-    with Task(type="progress-stream", state=initial_state) as task:
+    async with Task(type="progress-stream", state=initial_state) as task:
         state = task.state
         for i, word in enumerate(words):
-            task.update_state({
+            await task.update_state({
                 "processed_words": state["processed_words"] + [word],
                 "progress_idx": i + 1,
             })
@@ -143,12 +110,12 @@ The `type` parameter is a topic name you define. Best practices:
 NATS has a **1MB message limit**. For large data:
 
 ```python
-# Bad: Don't stream large payloads
-# task.update_state(large_document)
+## Bad: Don't stream large payloads
+## await task.update_state(large_document)
 
-# Good: Store large data externally, stream a reference
+## Good: Store large data externally, stream a reference
 url = await storage.upload(large_document)
-task.update_state({"url": url, "size": len(large_document)})
+await task.update_state({"url": url, "size": len(large_document)})
 ```
 
 ## Event Schema
@@ -177,5 +144,5 @@ Each published event is wrapped with context:
 
 ## Next Steps
 
-- [Consuming Streaming Events](streaming-consumption.mdx) - Subscribe and filter events
-- [Streaming Architecture](../appendices/streaming.mdx) - Technical implementation details
+- [Consuming Streaming Events](streaming-consumption) - Subscribe and filter events
+- [Streaming Architecture](../appendices/streaming) - Technical implementation details

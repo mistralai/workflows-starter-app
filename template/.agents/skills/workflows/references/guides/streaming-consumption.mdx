@@ -1,6 +1,5 @@
 ---
 id: streaming-consumption
-sidebar_label: Consuming Events
 title: Consuming Streaming Events
 sidebar_position: 8
 ---
@@ -14,8 +13,8 @@ Subscribe to real-time events from workflows and activities using the Workflows 
 ### Basic Consumption
 
 ```python
-from mistralai_workflows import WorkflowsClient
-from mistralai_workflows.protocol.v1.streaming import StreamEventsQueryParams
+from mistralai.workflows import WorkflowsClient
+from mistralai.workflows.protocol.v1.streaming import StreamEventsQueryParams
 
 async with WorkflowsClient(base_url="https://api.mistral.ai", api_key=os.environ["MISTRAL_API_KEY"]) as client:
     # Start a workflow
@@ -88,17 +87,18 @@ Understanding the subject hierarchy helps you filter events precisely.
 ### Subject Format
 
 ```
-{stream}_{namespace}.{workflow_name}.{parent_exec_id}.{exec_id}.{topic}.{scope}
+{stream_name}.{workflow_name}.{root_exec_id}.{parent_exec_id}.{exec_id}.{topic}.{scope}
 ```
 
-| Segment            | Description                | Example                        |
-| ------------------ | -------------------------- | ------------------------------ |
-| `stream_namespace` | Stream prefix + namespace  | `customer_uuid:workspace_uuid` |
-| `workflow_name`    | Workflow name              | `my-workflow`                  |
-| `parent_exec_id`   | Parent workflow's exec ID  | `abc123`                       |
-| `exec_id`          | Current workflow's exec ID | `def456`                       |
-| `topic`            | Stream name (your choice)  | `token`                        |
-| `scope`            | `workflow` or `activity.*` | `workflow`                     |
+| Segment          | Description                                              | Example                            |
+| ---------------- | -------------------------------------------------------- | ---------------------------------- |
+| `stream_name`    | Stream prefix + namespace (e.g., `workflows_stream_*`)   | `workflows_stream_customer:ws`     |
+| `workflow_name`  | Workflow name                                            | `my-workflow`                      |
+| `root_exec_id`   | Root workflow exec ID (top-level ancestor)               | `root123`                          |
+| `parent_exec_id` | Parent workflow exec ID (direct parent)                  | `parent456`                        |
+| `exec_id`        | Current workflow exec ID                                 | `exec789`                          |
+| `topic`          | Stream name (your choice)                                | `token`                            |
+| `scope`          | `workflow` or `activity.*`                               | `workflow`                         |
 
 ### Scope Values
 
@@ -118,34 +118,34 @@ Understanding the subject hierarchy helps you filter events precisely.
 
 NATS supports two wildcards for flexible subscriptions:
 
-| Wildcard | Matches                              | Example                 |
-| -------- | ------------------------------------ | ----------------------- |
-| `*`      | Single token (segment)               | `*.my-workflow.*.*.*.*` |
-| `>`      | One or more tokens (rest of subject) | `*.*.*.*.token.>`       |
+| Wildcard | Matches                              | Example                   |
+| -------- | ------------------------------------ | ------------------------- |
+| `*`      | Single token (segment)               | `*.my-workflow.*.*.*.*.*` |
+| `>`      | One or more tokens (rest of subject) | `*.*.*.*.*.token.>`       |
 
 ### Wildcard Examples
 
 ```
-# All events for a specific workflow name (any execution)
-*.my-workflow.*.*.*.>
+## All events for a specific workflow name (any execution)
+*.my-workflow.*.*.*.*.>
 
-# All token events across all workflows
-*.*.*.*.token.>
+## All token events across all workflows
+*.*.*.*.*.token.>
 
-# All workflow-level events (not activities)
-*.*.*.*.*.workflow
+## All workflow-level events (not activities)
+*.*.*.*.*.*.workflow
 
-# All activity events
-*.*.*.*.*.activity.>
+## All activity events
+*.*.*.*.*.*.activity.>
 
-# Events for a specific execution
-*.*.*.exec123.*.>
+## Events for a specific execution
+*.*.*.*.exec123.*.>
 
-# Events in a workflow tree (by parent ID)
-*.*.parent123.*.*.>
+## Events in a workflow tree (by root exec ID)
+*.*.root123.*.*.*.>
 
-# Specific activity type across all workflows
-*.*.*.*.*.activity.chat_activity.*.*
+## Specific activity type across all workflows
+*.*.*.*.*.*.activity.chat_activity.*.*
 ```
 
 ## API Routes
@@ -158,13 +158,19 @@ GET /v1/workflows/executions/{execution_id}/stream
 
 Query parameters for filtering:
 
-| Parameter          | Description                    | Example                      |
-| ------------------ | ------------------------------ | ---------------------------- |
-| `stream`           | Filter by stream name          | `?stream=token`              |
-| `workflow_name`    | Filter by workflow name        | `?workflow_name=my-workflow` |
-| `workflow_exec_id` | Filter by execution ID         | `?workflow_exec_id=abc123`   |
-| `scope`            | `workflow`, `activity`, or `*` | `?scope=activity`            |
-| `start_seq`        | Resume from sequence           | `?start_seq=42`              |
+| Parameter                | Description                               | Example                           |
+| ------------------------ | ----------------------------------------- | --------------------------------- |
+| `stream`                 | Filter by stream name                     | `?stream=token`                   |
+| `workflow_name`          | Filter by workflow name                   | `?workflow_name=my-workflow`      |
+| `workflow_exec_id`       | Filter by execution ID                    | `?workflow_exec_id=exec789`       |
+| `root_workflow_exec_id`  | Filter by root workflow exec ID           | `?root_workflow_exec_id=root123`  |
+| `parent_workflow_exec_id`| Filter by parent workflow exec ID         | `?parent_workflow_exec_id=parent456` |
+| `activity_name`          | Filter by activity name                   | `?activity_name=chat_activity`    |
+| `activity_id`            | Filter by activity execution ID           | `?activity_id=activity123`        |
+| `scope`                  | `workflow`, `activity`, or `*`            | `?scope=activity`                 |
+| `start_seq`              | Resume from sequence                      | `?start_seq=42`                   |
+| `metadata_filters`       | Filter by metadata (JSON object)          | `?metadata_filters={"key":"v"}` |
+| `workflow_event_types`   | Filter by workflow event types            | `?workflow_event_types=WORKFLOW_COMPLETED` |
 
 ### Example: Token Streaming
 
@@ -185,13 +191,13 @@ data: {"stream":"__internal_status__","sequence":3,"data":{"status":"WORKFLOW_CO
 ### Example: All Events with Wildcard
 
 ```bash
-# All events for an execution
+## All events for an execution
 curl -N "http://localhost:8000/v1/workflows/executions/${EXEC_ID}/stream"
 
-# Only activity events
+## Only activity events
 curl -N "http://localhost:8000/v1/workflows/executions/${EXEC_ID}/stream?scope=activity"
 
-# Only workflow-level events
+## Only workflow-level events
 curl -N "http://localhost:8000/v1/workflows/executions/${EXEC_ID}/stream?scope=workflow"
 ```
 
@@ -200,7 +206,7 @@ curl -N "http://localhost:8000/v1/workflows/executions/${EXEC_ID}/stream?scope=w
 When a workflow spawns child workflows, events maintain parent-child relationships:
 
 ```python
-# Parent workflow
+## Parent workflow
 @workflows.workflow.define(name="parent-workflow")
 class ParentWorkflow:
     @workflows.workflow.entrypoint
@@ -216,10 +222,9 @@ class ParentWorkflow:
 ### Consuming Events from Workflow Trees
 
 ```python
-# Get events from parent AND all children
+## Get events from parent AND all children
 async for event in client.stream_events(
-    parent_execution_id,
-    include_children=True
+    params=StreamEventsQueryParams(root_workflow_exec_id=parent_execution_id)
 ):
     if event.workflow_context.parent_workflow_exec_id:
         print(f"[child] {event.data}")
@@ -227,13 +232,13 @@ async for event in client.stream_events(
         print(f"[parent] {event.data}")
 ```
 
-### Filtering by Parent ID
+### Filtering by Root ID
 
 Using NATS wildcards to get all events in a workflow tree:
 
 ```
-# All events where parent_exec_id matches
-*.*.{parent_exec_id}.*.*.>
+## All events in a workflow tree by root exec ID
+*.*.{root_exec_id}.*.*.*.>
 ```
 
 ## Internal Status Events
@@ -295,11 +300,11 @@ async def resilient_consume(client, exec_id):
 Filter at the subscription level, not in your code:
 
 ```python
-# Good: Filter at source
+## Good: Filter at source
 async for event in client.stream_events(exec_id, stream="token"):
     process(event)
 
-# Bad: Filter in code (wastes bandwidth)
+## Bad: Filter in code (wastes bandwidth)
 async for event in client.stream_events(exec_id):
     if event.stream == "token":
         process(event)
@@ -317,5 +322,5 @@ async for event in client.stream_events(exec_id, scope="activity"):
 
 ## Next Steps
 
-- [Publishing Events](streaming.mdx) - How to publish from workflows/activities
-- [Streaming Architecture](../appendices/streaming.mdx) - Technical implementation details
+- [Publishing Events](streaming) - How to publish from workflows/activities
+- [Streaming Architecture](../appendices/streaming) - Technical implementation details

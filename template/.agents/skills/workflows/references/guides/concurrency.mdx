@@ -1,6 +1,5 @@
 ---
 id: concurrency
-sidebar_label: Concurrency Patterns
 title: Concurrency Patterns
 sidebar_position: 9
 ---
@@ -43,22 +42,22 @@ Process a known collection of items where you have all items upfront.
 ### Code Pattern
 
 ```python
-import mistralai_workflows as workflows
+import mistralai.workflows as workflows
 
 @workflows.activity()
 async def process_item(item_id: int, value: str) -> dict:
     # Process individual item
     return {"processed_value": f"processed_{value}"}
 
-# ... (inside a workflow)
-# Execute in parallel
+## ... (inside a workflow)
+## Execute in parallel
 items = [{"item_id": i, "value": f"item_{i}"} for i in range(1000)]
 results = await workflows.execute_activities_in_parallel(
     activity=process_item,
     items=items,
     max_concurrent_scheduled_tasks=100  # Optional: limit concurrency
 )
-# ...
+## ...
 ```
 
 ### Configuration Options
@@ -86,7 +85,7 @@ Process items sequentially from a stream/queue using token-based pagination.
 ### Code Pattern
 
 ```python
-import mistralai_workflows as workflows
+import mistralai.workflows as workflows
 
 @workflows.activity()
 async def process_item(item_id: int, value: str) -> dict:
@@ -106,13 +105,13 @@ async def get_next_item(prev_item: dict | None) -> dict | None:
 
     return {"item_id": next_id, "value": f"item_{next_id}"}
 
-# ... (inside a workflow)
-# Execute chain
+## ... (inside a workflow)
+## Execute chain
 results = await workflows.execute_activities_in_parallel(
     activity=process_item,
     get_item_from_prev_item_activity=get_next_item
 )
-# ...
+## ...
 ```
 
 **Note**: The Chain Executor does not use `max_concurrent_scheduled_tasks` or `max_concurrent_executions_per_worker` parameters.
@@ -142,7 +141,7 @@ Process items by fetching pages/chunks using index-based pagination.
 ### Code Pattern
 
 ```python
-import mistralai_workflows as workflows
+import mistralai.workflows as workflows
 
 @workflows.activity()
 async def process_item(item_id: int, value: str) -> dict:
@@ -158,7 +157,7 @@ async def get_item_by_index(params: workflows.GetItemFromIndexParams) -> dict:
         "extra_data": params.extra_params
     }
 
-# Execute with offset pagination
+## Execute with offset pagination
 results = await workflows.execute_activities_in_parallel(
     activity=process_item,
     get_item_from_index_activity=get_item_by_index,
@@ -252,14 +251,14 @@ The concurrency framework automatically handles:
 Adjust concurrency based on your workload:
 
 ```python
-# For I/O-bound tasks (API calls, database queries)
+## For I/O-bound tasks (API calls, database queries)
 results = await workflows.execute_activities_in_parallel(
     activity=api_call_activity,
     items=items,
     max_concurrent_scheduled_tasks=200  # Higher concurrency for I/O-bound
 )
 
-# For CPU-bound tasks
+## For CPU-bound tasks
 results = await workflows.execute_activities_in_parallel(
     activity=cpu_intensive_activity,
     items=items,
@@ -272,14 +271,14 @@ results = await workflows.execute_activities_in_parallel(
 For very large datasets, the framework automatically handles continue-as-new:
 
 ```python
-# Process 100,000 items with List Executor - automatically continues as new workflow
+## Process 100,000 items with List Executor - automatically continues as new workflow
 results = await workflows.execute_activities_in_parallel(
     activity=process_item,
     items=large_item_list,  # 100,000 items
     max_concurrent_scheduled_tasks=100
 )
 
-# Process 100,000 items with Offset Pagination Executor
+## Process 100,000 items with Offset Pagination Executor
 results = await workflows.execute_activities_in_parallel(
     activity=process_item,
     get_item_from_index_activity=get_item_by_index,
@@ -304,7 +303,7 @@ async def extract_text(document_id: str, content: str, metadata: dict) -> dict:
         "analysis_results": {}
     }
 
-# Process all documents in parallel
+## Process all documents in parallel
 documents = await fetch_documents_from_storage()
 results = await workflows.execute_activities_in_parallel(
     activity=extract_text,
@@ -329,7 +328,7 @@ async def enrich_user_data(user_id: str, name: str, email: str) -> dict:
         "recommendations": recommendations
     }
 
-# Enrich all users in parallel
+## Enrich all users in parallel
 users = await database.get_all_users()
 enriched_users = await workflows.execute_activities_in_parallel(
     activity=enrich_user_data,
@@ -358,7 +357,7 @@ async def process_order(order_id: str, customer_id: str, items: list[str]) -> di
         }
     }
 
-# Process all orders in parallel
+## Process all orders in parallel
 orders = await fetch_pending_orders()
 results = await workflows.execute_activities_in_parallel(
     activity=process_order,
@@ -429,10 +428,10 @@ results = await workflows.execute_activities_in_parallel(
 
 ## Next Steps
 
-- [Workflows Guide](workflows.mdx) - Learn how to orchestrate activities
-- [Activities Guide](activities.mdx) - Understand activity implementation details
-- [Observability Guide](observability.mdx) - Monitor and trace your concurrent executions
-- [Limitations Guide](limitations.mdx) - Understand Temporal's execution constraints
+- [Workflows Guide](workflows) - Learn how to orchestrate activities
+- [Activities Guide](activities) - Understand activity implementation details
+- [Observability Guide](observability) - Monitor and trace your concurrent executions
+- [Limitations Guide](limitations) - Understand Temporal's execution constraints
 
 ## API Reference
 

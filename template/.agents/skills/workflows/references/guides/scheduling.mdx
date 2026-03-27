@@ -1,6 +1,5 @@
 ---
 id: scheduling
-sidebar_label: Scheduling
 title: Workflow Scheduling
 sidebar_position: 7
 ---
@@ -22,7 +21,7 @@ Workers automatically register workflow schedules with Workflows during startup.
 Add schedules to workflows using cron expressions:
 
 ```python
-from mistralai_workflows.models import ScheduleDefinition
+from mistralai.workflows.models import ScheduleDefinition
 
 schedule = ScheduleDefinition(
     input={"report_type": "daily"},
@@ -41,9 +40,9 @@ class ReportWorkflow:
 Customize schedule behavior with policies:
 
 ```python
-from mistralai_workflows.models import SchedulePolicy, ScheduleOverlapPolicy
+from mistralai.workflows.models import SchedulePolicy, ScheduleOverlapPolicy
 
-# Override default schedule policy
+## Override default schedule policy
 schedule_policy = SchedulePolicy(
     catchup_window=timedelta(days=1),  # Allow 1 day of catchup
     overlap_policy=ScheduleOverlapPolicy.SKIP,  # Skip overlapping executions
@@ -80,10 +79,10 @@ For more details on schedule policies, see the [Temporal SchedulePolicy Document
 
 ```python
 from datetime import timedelta
-import mistralai_workflows as workflows
-from mistralai_workflows.models import ScheduleDefinition, SchedulePolicy, ScheduleOverlapPolicy
+import mistralai.workflows as workflows
+from mistralai.workflows.models import ScheduleDefinition, SchedulePolicy, ScheduleOverlapPolicy
 
-# Run every Saturday at 3 AM UTC
+## Run every Saturday at 3 AM UTC
 backup_schedule = ScheduleDefinition(
     input={"retention_days": 30},
     cron_expressions=["0 3 * * 6"],
@@ -99,8 +98,8 @@ class DatabaseBackupWorkflow:
         print(f"Starting backup with {retention_days} day retention")
         # Backup implementation here
 
-# Start worker with:
-# asyncio.run(workflows.run_worker([DatabaseBackupWorkflow]))
+## Start worker with:
+## asyncio.run(workflows.run_worker([DatabaseBackupWorkflow]))
 ```
 
 ## Important Notes
@@ -112,5 +111,5 @@ class DatabaseBackupWorkflow:
 
 ## Next Steps
 
-- [Workflow Guide](workflows.mdx) - Learn workflow fundamentals
-- [Signals, Queries & Updates](signals-queries-updates.mdx) - Other workflow interaction methods
+- [Workflow Guide](workflows) - Learn workflow fundamentals
+- [Signals, Queries & Updates](signals-queries-updates) - Other workflow interaction methods

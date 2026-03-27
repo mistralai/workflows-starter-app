@@ -1,6 +1,5 @@
 ---
 id: durable-agents
-sidebar_label: Durable Agents
 title: Durable Agents
 sidebar_position: 8
 ---
@@ -14,7 +13,7 @@ Durable Agents allow you to run LLM agents within your Mistral workflows.
 To use Durable Agents, install the Mistral plugin:
 
 ```bash
-uv add mistralai-workflows[mistralai]
+uv add 'mistralai-workflows[mistralai]'
 ```
 
 ## What is a Durable Agent?
@@ -82,8 +81,8 @@ The Runner orchestrates agent execution through a Session. Agents can hand off t
 The `Agent` class defines an LLM agent with its model, instructions, tools and handoffs:
 
 ```python
-import mistralai_workflows as workflows
-import mistralai_workflows.plugins.mistralai as workflows_mistralai
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
 
 agent = workflows_mistralai.Agent(
     model="mistral-medium-latest",
@@ -100,8 +99,8 @@ agent = workflows_mistralai.Agent(
 The `Runner` executes an agent with user inputs and manages the conversation loop:
 
 ```python
-import mistralai_workflows as workflows
-import mistralai_workflows.plugins.mistralai as workflows_mistralai
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
 
 outputs = await workflows_mistralai.Runner.run(
     agent=agent,
@@ -126,9 +125,8 @@ Here's a simple agent workflow that uses an activity as a tool:
 
 ```python
 import mistralai
-import mistralai_workflows as workflows
-import mistralai_workflows.plugins.mistralai as workflows_mistralai
-
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
 
 @workflows.activity()
 async def get_interest_rate(year: int) -> dict:
@@ -139,7 +137,6 @@ async def get_interest_rate(year: int) -> dict:
     """
     # Your implementation here
     return {"interest_rate": 1.62}
-
 
 @workflows.workflow.define(name="finance_agent_workflow")
 class FinanceAgentWorkflow:
@@ -174,10 +171,10 @@ class FinanceAgentWorkflow:
 Agents can delegate tasks to specialized agents using handoffs. The system automatically manages the handoff conversation:
 
 ```python
-import mistralai_workflows as workflows
-import mistralai_workflows.plugins.mistralai as workflows_mistralai
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
 
-# Create a specialized agent for interest rate queries
+## Create a specialized agent for interest rate queries
 interest_rate_agent = workflows_mistralai.Agent(
     model="mistral-medium-latest",
     name="ecb-interest-rate-agent",
@@ -186,7 +183,7 @@ interest_rate_agent = workflows_mistralai.Agent(
     tools=[get_interest_rate],
 )
 
-# Main agent that can hand off to the specialist
+## Main agent that can hand off to the specialist
 finance_agent = workflows_mistralai.Agent(
     model="mistral-medium-latest",
     name="finance-agent",
@@ -212,7 +209,7 @@ Connect to external tool servers using the Model Context Protocol. Two transport
 For local command-line MCP servers:
 
 ```python
-from mistralai_workflows.plugins.mistralai import MCPStdioConfig
+from mistralai.workflows.plugins.mistralai import MCPStdioConfig
 
 mcp_config = MCPStdioConfig(
     command="npx",
@@ -233,7 +230,7 @@ agent = Agent(
 For remote MCP servers over Server-Sent Events:
 
 ```python
-from mistralai_workflows.plugins.mistralai import MCPSSEConfig
+from mistralai.workflows.plugins.mistralai import MCPSSEConfig
 
 mcp_config = MCPSSEConfig(
     url="https://your-mcp-server.com/sse",
@@ -256,8 +253,8 @@ Use Mistral's built-in tools alongside activities:
 
 ```python
 import mistralai
-import mistralai_workflows as workflows
-import mistralai_workflows.plugins.mistralai as workflows_mistralai
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
 
 agent = workflows_mistralai.Agent(
     model="mistral-medium-latest",
@@ -282,8 +279,8 @@ Available built-in tools:
 Uses the Mistral Agents SDK for production workloads:
 
 ```python
-import mistralai_workflows as workflows
-import mistralai_workflows.plugins.mistralai as workflows_mistralai
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
 
 session = workflows_mistralai.RemoteSession()
 
@@ -306,8 +303,8 @@ Features:
 Runs agents locally using the completion endpoint:
 
 ```python
-import mistralai_workflows as workflows
-import mistralai_workflows.plugins.mistralai as workflows_mistralai
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
 
 session = workflows_mistralai.LocalSession()
 
@@ -335,8 +332,7 @@ A full example combining activities, handoffs and workflow orchestration:
 ```python
 import asyncio
 import mistralai
-import mistralai_workflows as workflows
-
+import mistralai.workflows as workflows
 
 @workflows.activity()
 async def calculate_risk_score(deal_type: str, amount: float) -> dict:
@@ -351,7 +347,6 @@ async def calculate_risk_score(deal_type: str, amount: float) -> dict:
     if amount > 100000:
         risk_factors.append("High value transaction")
     return {"risk_score": risk_score, "risk_factors": risk_factors}
-
 
 @workflows.workflow.define(name="deal_analysis_workflow")
 class DealAnalysisWorkflow:
@@ -394,7 +389,6 @@ class DealAnalysisWorkflow:
         ])
 
         return {"analysis": analysis}
-
 
 if __name__ == "__main__":
     asyncio.run(workflows.run_worker([DealAnalysisWorkflow]))

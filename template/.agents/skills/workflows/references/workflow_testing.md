@@ -43,11 +43,11 @@ def _find_workflow_decorated_classes() -> dict[str, str]:
         if isinstance(node, ast.Call):
             node = node.func
 
-        # Check for workflows.workflow.define or abraxas.workflow.define
+        # Matches `import mistralai.workflows as workflows` → workflows.workflow.define
         if isinstance(node, ast.Attribute) and node.attr == "define":
             if isinstance(node.value, ast.Attribute) and node.value.attr == "workflow":
                 if isinstance(node.value.value, ast.Name):
-                    return node.value.value.id in ("workflows", "abraxas", "mistralai_workflows")
+                    return node.value.value.id == "workflows"
         return False
 
     def scan_file(file_path: Path) -> None:
@@ -120,6 +120,38 @@ def test_all_workflow_decorated_classes_are_registered(mocker: MockerFixture) ->
             f"but are NOT registered in get_workflows():\n{missing_details}\n\n"
             f"Please add them to core/workflows/worker.py"
         )
+```
+
+## Unit Testing with `create_test_worker`
+
+The SDK provides `create_test_worker` in `mistralai.workflows.testing` for running workflows against an in-memory Temporal environment. It handles DI scoping, sandbox setup, and pre-registers event-emitting activities.
+
+### Fixtures
+
+Import the SDK fixtures in your `conftest.py`:
+
+```python
+# conftest.py
+from mistralai.workflows.testing.fixtures import *  # noqa: F401,F403
+```
+
+This provides `temporal_env` (in-memory Temporal with time-skipping) and auto-use fixtures for test config, DI cache clearing, and search attribute mocking.
+
+### Example
+
+```python
+from mistralai.workflows.testing import create_test_worker
+
+async def test_my_workflow(temporal_env):
+    async with create_test_worker(temporal_env, [MyWorkflow], [my_activity]) as worker:
+        handle = await temporal_env.client.start_workflow(
+            "my-workflow",
+            {"input_field": "value"},
+            id="test-id",
+            task_queue="test-task-queue",
+        )
+        result = await handle.result()
+        assert result == {"output_field": "expected"}
 ```
 
 ## CI Integration
