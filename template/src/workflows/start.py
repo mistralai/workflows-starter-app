@@ -6,10 +6,8 @@ import os
 import sys
 
 from dotenv import load_dotenv
-
-from pydantic import create_model
-
 from mistralai.workflows.client import get_mistral_client
+from pydantic import create_model
 
 load_dotenv(override=True)
 
@@ -32,13 +30,14 @@ async def main() -> None:
         raise SystemExit(1)
 
     client = get_mistral_client(
-        api_key=api_key, server_url=os.environ.get("SERVER_URL", "https://api.mistral.ai")
+        api_key=api_key,
+        server_url=os.environ.get("SERVER_URL", "https://api.mistral.ai"),
     )
 
     result = await client.workflows.execute_workflow_and_wait_async(
         workflow_identifier=workflow_name,
         input=input_data.model_dump(mode="json"),
-        task_queue=os.environ.get("DEPLOYMENT_NAME", "default"),
+        deployment_name=os.environ.get("DEPLOYMENT_NAME", "default"),
     )
     print(f"Result: {result}")
 
