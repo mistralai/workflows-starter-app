@@ -138,7 +138,7 @@ Create an exception from Temporal errors:
 from temporalio.exceptions import TemporalError
 
 try:
-    await client.execute_workflow(...)
+    await client.workflows.execute_workflow_async(...)
 except TemporalError as e:
     raise WorkflowsException.from_temporal_error(
         temporal_error=e,

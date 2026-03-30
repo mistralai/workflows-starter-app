@@ -108,3 +108,106 @@ Workers now use `DEPLOYMENT_NAME` as the Temporal task queue name. The old `TEMP
 **Versioned workers** (with `deployment_name` and `build_id`) are forbidden from using the `default` task queue to prevent Temporal versioning conflicts.
 
 ---
+
+
+## `WorkflowsClient` Removed
+
+`WorkflowsClient` has been removed entirely. All workflow operations now go through the Mistral SDK client (`mistral_client`).
+
+### Creating a client
+
+```python
+# ❌ OLD
+from mistralai.workflows import WorkflowsClient
+
+client = WorkflowsClient(
+    base_url="https://api.mistral.ai",
+    api_version="v1",
+    api_key="your-key",
+)
+
+# ✅ NEW
+from mistralai.workflows.client import get_mistral_client
+
+mistral_client = get_mistral_client()
+```
+
+### Executing a workflow
+
+```python
+# ❌ OLD
+async with WorkflowsClient(base_url=..., api_key=...) as client:
+    await client.execute_workflow(
+        workflow_identifier="my-workflow",
+        input_data=params,
+        execution_id=exec_id,
+        task_queue=task_queue,
+    )
+
+# ✅ NEW
+mistral_client = get_mistral_client()
+await mistral_client.workflows.execute_workflow_async(
+    workflow_identifier="my-workflow",
+    input=params.model_dump(mode="json"),
+    execution_id=exec_id,
+    task_queue=task_queue,
+)
+```
+
+### Waiting for workflow completion
+
+```python
+# ❌ OLD
+result = await client.execute_workflow_and_wait(
+    workflow_identifier="my-workflow",
+    input_data=params,
+)
+
+# ✅ NEW
+result = await mistral_client.workflows.execute_workflow_and_wait_async(
+    workflow_identifier="my-workflow",
+    input=params.model_dump(mode="json"),
+)
+```
+
+### Scheduling a workflow
+
+```python
+# ❌ OLD
+await client.schedule_workflow(
+    schedule=schedule_def,
+    workflow_identifier="my-workflow",
+)
+
+# ✅ NEW
+await mistral_client.workflows.schedule_workflow_async(
+    schedule=schedule_def.model_dump(mode="json"),
+    workflow_identifier="my-workflow",
+)
+```
+
+### Streaming workflow events
+
+```python
+# ❌ OLD
+async for event in client.stream_events(execution_id=exec_id):
+    ...
+
+# ✅ NEW
+from mistralai.workflows.client import stream_workflow_events
+
+async for event in stream_workflow_events(mistral_client, execution_id=exec_id):
+    ...
+```
+
+### Import changes
+
+| v2 | v3 |
+|----|-----|
+| `from mistralai.workflows import WorkflowsClient` | `from mistralai.workflows.client import get_mistral_client` |
+| `WorkflowsClient(base_url=..., api_key=...)` | `get_mistral_client(server_url=..., api_key=...)` |
+| `client.execute_workflow(...)` | `mistral_client.workflows.execute_workflow_async(...)` |
+| `client.execute_workflow_and_wait(...)` | `mistral_client.workflows.execute_workflow_and_wait_async(...)` |
+| `client.schedule_workflow(...)` | `mistral_client.workflows.schedule_workflow_async(...)` |
+| `client.stream_events(...)` | `stream_workflow_events(mistral_client, ...)` |
+

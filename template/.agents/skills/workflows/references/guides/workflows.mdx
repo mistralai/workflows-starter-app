@@ -571,7 +571,7 @@ All workflow events up to the reset point are copied to the new execution. The w
 Resetting should only be used after fixing the underlying problem. It's best practice to provide a reason for the reset, which is recorded in the workflow's event history.
 
 ```python
-await client.reset_workflow(
+await client.workflows.executions.reset_workflow_async(
     execution_id="your-execution-id",
     event_id=42,  # Must be a WORKFLOW_TASK_COMPLETED event
     reason="Bug fixed in activity logic",

@@ -13,16 +13,23 @@ Subscribe to real-time events from workflows and activities using the Workflows 
 ### Basic Consumption
 
 ```python
-from mistralai.workflows.client import get_mistral_client, stream_workflow_events
+from mistralai.workflows.client import get_mistral_client
 
-client = get_mistral_client()
+async with get_mistral_client(
+    server_url="https://api.mistral.ai",
+    api_key=os.environ["MISTRAL_API_KEY"],
+) as client:
+    # Start a workflow
+    execution = await client.workflows.execute_workflow_async(
+        workflow_identifier="my-workflow",
+        input=params,
+    )
 
-# Start a workflow
-execution = await client.workflows.execute_workflow_async(workflow_identifier="my-workflow", input=params.model_dump(mode="json"))
-
-# Stream all events for this execution
-async for event in stream_workflow_events(client, execution_id=execution.execution_id):
-    print(f"[{event.stream}] {event.data}")
+    # Stream all events for this execution
+    async for event in client.workflows.events.get_stream_events(
+        workflow_exec_id=execution.execution_id,
+    ):
+        print(f"[{event.stream}] {event.data}")
 ```
 
 ### Filtering by Stream Name
@@ -30,11 +37,9 @@ async for event in stream_workflow_events(client, execution_id=execution.executi
 Only receive events from a specific stream:
 
 ```python
-async for event in client.stream_events(
-    StreamEventsQueryParams(
-        workflow_exec_id=execution_id,
-        stream="token"  # Only token events
-    )
+async for event in client.workflows.events.get_stream_events(
+    workflow_exec_id=execution_id,
+    stream="token",  # Only token events
 ):
     print(event.data)
 ```
@@ -44,7 +49,9 @@ async for event in client.stream_events(
 Internal status events tell you when workflows/activities start and finish:
 
 ```python
-async for event in client.stream_events(StreamEventsQueryParams(workflow_exec_id=execution_id)):
+async for event in client.workflows.events.get_stream_events(
+    workflow_exec_id=execution_id,
+):
     if event.stream == "__internal_status__":
         status = event.data.get("status")
         if status == "WORKFLOW_COMPLETED":
@@ -66,11 +73,9 @@ If your connection drops, resume from where you left off:
 last_seq = 0
 while True:
     try:
-        async for event in client.stream_events(
-            StreamEventsQueryParams(
-                workflow_exec_id=execution_id,
-                start_seq=last_seq
-            )
+        async for event in client.workflows.events.get_stream_events(
+            workflow_exec_id=execution_id,
+            start_seq=last_seq,
         ):
             last_seq = event.sequence
             process(event)
@@ -223,8 +228,8 @@ class ParentWorkflow:
 
 ```python
 ## Get events from parent AND all children
-async for event in client.stream_events(
-    params=StreamEventsQueryParams(root_workflow_exec_id=parent_execution_id)
+async for event in client.workflows.events.get_stream_events(
+    root_workflow_exec_id=parent_execution_id,
 ):
     if event.workflow_context.parent_workflow_exec_id:
         print(f"[child] {event.data}")
@@ -280,12 +285,14 @@ The Workflows SDK automatically publishes status events on `__internal_status__`
 
 ```python
 async def resilient_consume(client, exec_id):
-    last_seq = 0
     max_retries = 10
 
     for attempt in range(max_retries):
         try:
-            async for event in client.stream_events(exec_id, start_seq=last_seq):
+            async for event in client.workflows.events.get_stream_events(
+                workflow_exec_id=exec_id,
+                start_seq=last_seq,
+            ):
                 last_seq = event.sequence
                 yield event
 
@@ -301,11 +308,11 @@ Filter at the subscription level, not in your code:
 
 ```python
 ## Good: Filter at source
-async for event in client.stream_events(exec_id, stream="token"):
+async for event in client.workflows.events.get_stream_events(exec_id, stream="token"):
     process(event)
 
 ## Bad: Filter in code (wastes bandwidth)
-async for event in client.stream_events(exec_id):
+async for event in client.workflows.events.get_stream_events(exec_id):
     if event.stream == "token":
         process(event)
 ```
@@ -315,7 +322,7 @@ async for event in client.stream_events(exec_id):
 If you only care about activity events:
 
 ```python
-async for event in client.stream_events(exec_id, scope="activity"):
+async for event in client.workflows.events.get_stream_events(exec_id, scope="activity"):
     # Only activity events, no workflow-level events
     process(event)
 ```

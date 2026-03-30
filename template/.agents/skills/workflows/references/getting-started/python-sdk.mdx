@@ -26,7 +26,7 @@ from mistralai.workflows.client import get_mistral_client
 
 ## Initialize client
 client = get_mistral_client(
-    server_url="https://api.mistral.ai",
+    server_url="https://api.mistral.ai", # For staging use https://api.globalaegis.net
     api_key="your-api-key",     # Should match your worker's `MISTRAL_API_KEY`
 )
 ```
@@ -61,23 +61,18 @@ from pydantic import BaseModel
 class InputData(BaseModel):
     name: str
 
-result = await client.workflows.execute_workflow_and_wait_async(
+result = await client.workflows.execute_workflow_async(
     workflow_identifier="simple_example_workflow",
     input=InputData(name="MyName").model_dump(mode="json"),
 )
 ```
-
-This method offers two approaches:
-
-- `use_api_sync=True`: Uses the server's built-in synchronous execution (recommended)
-- `use_api_sync=False`: Uses client-side polling (default interval: 5 seconds)
 
 ### 3. Checking Execution Status
 
 Monitor the progress of your workflow executions:
 
 ```python
-status = await client.workflows.get_workflow_execution_async(execution_id=execution_id)
+status = await client.workflows.executions.get_workflow_execution_async(execution_id=execution_id)
 print(f"Current status: {status.status}")
 ```
 
@@ -93,9 +88,9 @@ from pydantic import BaseModel
 class SignalData(BaseModel):
     new_value: int
 
-await client.workflows.signal_workflow_async(
+await client.workflows.executions.signal_workflow_execution_async(
     execution_id="your-execution-id", # Execution id of the running workflow with signal method
-    signal_name="update_config", # Name of the signal method
+    name="update_config", # Name of the signal method
     input=SignalData(new_value=42).model_dump(mode="json")
 )
 ```
@@ -105,9 +100,9 @@ await client.workflows.signal_workflow_async(
 Retrieve information from running workflows without modifying their state:
 
 ```python
-response = await client.workflows.query_workflow_async(
+response = await client.workflows.executions.query_workflow_execution_async(
     execution_id="your-execution-id", # Execution id of the running workflow with query method
-    query_name="get_status" # Name of the query method
+    name="get_status" # Name of the query method
 )
 print(response.result)
 ```
@@ -122,9 +117,9 @@ from pydantic import BaseModel
 class UpdateData(BaseModel):
     timeout: int
 
-response = await client.workflows.update_workflow_async(
+response = await client.workflows.executions.update_workflow_execution_async(
     execution_id="your-execution-id",
-    update_name="change_settings",
+    name="change_settings",
     input=UpdateData(timeout=300).model_dump(mode="json")
 )
 ```
@@ -134,7 +129,7 @@ response = await client.workflows.update_workflow_async(
 Terminate a workflow during execution:
 
 ```python
-await client.workflows.terminate_workflow_execution_async(execution_id=execution_id)
+await client.workflows.executions.terminate_workflow_execution_async(execution_id=execution_id)
 ```
 
 ## Workflow Management
@@ -164,7 +159,7 @@ print(f"The definition of this workflow is: {response.workflow}.")
 Get detailed OpenTelemetry traces for debugging and analysis:
 
 ```python
-trace = await client.workflows.get_workflow_execution_trace_otel_async(execution_id)
+trace = await client.workflows.executions.get_workflow_execution_trace_otel_async(execution_id)
 ```
 
 ### Getting Trace Summaries
@@ -172,7 +167,7 @@ trace = await client.workflows.get_workflow_execution_trace_otel_async(execution
 Retrieve condensed information about workflow executions:
 
 ```python
-summary = await client.workflows.get_workflow_execution_trace_summary_async(execution_id)
+summary = await client.workflows.executions.get_workflow_execution_trace_summary_async(execution_id)
 ```
 
 ### Accessing Trace Events
@@ -180,7 +175,7 @@ summary = await client.workflows.get_workflow_execution_trace_summary_async(exec
 Examine individual events in a workflow execution:
 
 ```python
-events = await client.workflows.get_workflow_execution_trace_events_async(
+events = await client.workflows.executions.get_workflow_execution_trace_events_async(
     execution_id,
     merge_same_id_events=True  # Combines events with the same ID
 )
@@ -195,12 +190,12 @@ Set up workflows to run on a schedule:
 ```python
 from mistralai.workflows.models import ScheduleDefinition
 schedule_id = "daily-name-schedule"
-schedule = await client.workflows.schedule_workflow_async(
+schedule = await client.workflows.schedules.schedule_workflow_async(
     workflow_identifier="simple_example_workflow",
     schedule=ScheduleDefinition(
         input={"name": "MyName"},
         cron_expressions=["0 0 * * *"] # Runs daily at midnight
-    ).model_dump(mode="json"),
+    ),
     schedule_id=schedule_id,
 )
 ```
@@ -211,10 +206,10 @@ View and manage all your scheduled workflows:
 
 ```python
 ## List all schedules
-response = await client.workflows.get_schedules_async()
+response = await client.workflows.schedules.get_schedules_async()
 print(f"Here are all the defined schedules: {response.schedules}")
 ## Remove a schedule
-await client.workflows.unschedule_workflow_async(schedule_id=schedule_id)
+await client.workflows.schedules.unschedule_workflow_async(schedule_id=schedule_id)
 ```
 
 ## Complete Example
@@ -234,12 +229,12 @@ async def main() -> None:
         report_type: str
 
     client = get_mistral_client(
-        server_url="https://api.mistral.ai",
+        server_url="https://api.mistral.ai", # For staging use https://api.globalaegis.net
         api_key=os.environ["MISTRAL_API_KEY"],
     )
 
-    # Execute and wait for workflow completion
-    result = await client.workflows.execute_workflow_and_wait_async(
+    # Execute workflow
+    result = await client.workflows.execute_workflow_async(
         workflow_identifier="report_generator",
         input=InputData(report_type="weekly").model_dump(mode="json"),
     )
