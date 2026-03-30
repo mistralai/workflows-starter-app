@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "A Mistral Workflows project"
 requires-python = ">=3.12"
 dependencies = [
-    "mistralai-workflows",
+    "mistralai-workflows>=3.0.0a3",
     "pydantic",
     "python-dotenv",
 ]
@@ -16,3 +16,6 @@ dev = [
     "pytest>=8.0",
     "watchdog>=4.0",
 ]
+
+[tool.uv]
+prerelease = "allow"

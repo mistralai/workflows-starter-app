@@ -1,4 +1,5 @@
 """Auto-discover all workflow classes in src/workflows/ and start a worker."""
+# ruff: noqa: E402
 
 import asyncio
 import importlib
@@ -8,12 +9,12 @@ import inspect
 import pkgutil
 import sys
 
+load_dotenv(override=True)
+
 import mistralai.workflows as workflows
 from mistralai.workflows.core.definition.workflow_definition import (
     get_workflow_definition,
 )
-
-load_dotenv(override=True)
 
 
 def discover_workflows() -> list[type]:

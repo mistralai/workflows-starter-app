@@ -32,13 +32,13 @@ Trace collection is sampled. By default the worker uses a parent-based sampler w
 
 ```python
 ## Get trace data
-trace = await client.get_workflow_execution_trace_otel(execution_id)
+trace = await client.workflows.executions.get_workflow_execution_trace_otel_async(execution_id)
 
 ## Get trace summary
-summary = await client.get_workflow_execution_trace_summary(execution_id)
+summary = await client.workflows.executions.get_workflow_execution_trace_summary_async(execution_id)
 
 ## Get detailed events
-events = await client.get_workflow_execution_trace_events(
+events = await client.workflows.executions.get_workflow_execution_trace_events_async(
     execution_id,
     include_internal_events=False  # Hide system events
 )
