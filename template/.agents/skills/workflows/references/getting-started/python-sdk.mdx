@@ -26,7 +26,7 @@ from mistralai.workflows.client import get_mistral_client
 
 ## Initialize client
 client = get_mistral_client(
-    server_url="https://api.mistral.ai", # For staging use https://api.globalaegis.net
+    server_url="https://api.mistral.ai",
     api_key="your-api-key",     # Should match your worker's `MISTRAL_API_KEY`
 )
 ```
@@ -229,7 +229,7 @@ async def main() -> None:
         report_type: str
 
     client = get_mistral_client(
-        server_url="https://api.mistral.ai", # For staging use https://api.globalaegis.net
+        server_url="https://api.mistral.ai",
         api_key=os.environ["MISTRAL_API_KEY"],
     )
 
