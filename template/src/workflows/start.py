@@ -1,4 +1,5 @@
 """Trigger a workflow execution from the command line."""
+# ruff: noqa: E402
 
 import asyncio
 import json
@@ -6,10 +7,11 @@ import os
 import sys
 
 from dotenv import load_dotenv
-from mistralai.workflows.client import get_mistral_client
-from pydantic import create_model
 
 load_dotenv(override=True)
+
+from mistralai.workflows.client import get_mistral_client
+from pydantic import create_model
 
 
 async def main() -> None:
