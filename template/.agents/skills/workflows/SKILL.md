@@ -21,7 +21,7 @@ The documentation is organized into several categories:
 - **[Introduction](references/getting-started/introduction.mdx)**: Overview of Mistral Workflows and its core architecture
 - **[Installation](references/getting-started/installation.mdx)**: Guide to installing and setting up the Workflows framework (CLI scaffolding, optional deps)
 - **[Core Concepts](references/getting-started/core-concepts.mdx)**: Workflows, activities, workers, executions vs runs
-- **[Python SDK](references/getting-started/python-sdk.mdx)**: Documentation for the Python SDK and WorkflowsClient
+- **[Python SDK](references/getting-started/python-sdk.mdx)**: Documentation for the Python SDK and `get_mistral_client()`
 - **[Your First Workflow](references/getting-started/your-first-workflow.mdx)**: Step-by-step guide to creating your first workflow
 
 ### Guides
@@ -34,7 +34,7 @@ The documentation is organized into several categories:
 - **[Scheduling](references/guides/scheduling.mdx)**: Cron expressions, ScheduleDefinition, SchedulePolicy, overlap handling
 - **[Dependency Injection](references/guides/dependency-injection.mdx)**: FastAPI-style Depends() pattern
 - **[Streaming](references/guides/streaming.mdx)**: Task API, token streaming, progress updates
-- **[Streaming Consumption](references/guides/streaming-consumption.mdx)**: WorkflowsClient.stream_events(), NATS subjects, SSE API
+- **[Streaming Consumption](references/guides/streaming-consumption.mdx)**: `stream_workflow_events()`, NATS subjects, SSE API
 - **[Concurrency](references/guides/concurrency.mdx)**: execute_activities_in_parallel() with List/Chain/Offset executors
 - **[Rate Limiting](references/guides/rate-limiting.mdx)**: Distributed rate limiting across workers
 - **[Handling Large Data](references/guides/handling-large-data.mdx)**: OffloadableField, blob storage (S3/Azure/GCS)

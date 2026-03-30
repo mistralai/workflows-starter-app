@@ -13,16 +13,16 @@ Subscribe to real-time events from workflows and activities using the Workflows 
 ### Basic Consumption
 
 ```python
-from mistralai.workflows import WorkflowsClient
-from mistralai.workflows.protocol.v1.streaming import StreamEventsQueryParams
+from mistralai.workflows.client import get_mistral_client, stream_workflow_events
 
-async with WorkflowsClient(base_url="https://api.mistral.ai", api_key=os.environ["MISTRAL_API_KEY"]) as client:
-    # Start a workflow
-    execution = await client.execute_workflow(workflow_identifier="my-workflow", input_data=params)
+client = get_mistral_client()
 
-    # Stream all events for this execution
-    async for event in client.stream_events(params=StreamEventsQueryParams(workflow_exec_id=execution.execution_id)):
-        print(f"[{event.stream}] {event.data}")
+# Start a workflow
+execution = await client.workflows.execute_workflow_async(workflow_identifier="my-workflow", input=params.model_dump(mode="json"))
+
+# Stream all events for this execution
+async for event in stream_workflow_events(client, execution_id=execution.execution_id):
+    print(f"[{event.stream}] {event.data}")
 ```
 
 ### Filtering by Stream Name

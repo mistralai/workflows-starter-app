@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 from pydantic import create_model
 
-from mistralai.workflows.client import WorkflowsClient
+from mistralai.workflows.client import get_mistral_client
 
 load_dotenv(override=True)
 
@@ -31,14 +31,14 @@ async def main() -> None:
         print("Error: MISTRAL_API_KEY is not set. Check your .env file.")
         raise SystemExit(1)
 
-    client = WorkflowsClient(
-        api_key=api_key, base_url=os.environ.get("SERVER_URL", "https://api.mistral.ai")
+    client = get_mistral_client(
+        api_key=api_key, server_url=os.environ.get("SERVER_URL", "https://api.mistral.ai")
     )
 
-    result = await client.execute_workflow_and_wait(
-        workflow_name,
-        input_data=input_data,
-        task_queue=os.environ.get("TEMPORAL_TASK_QUEUE", "default"),
+    result = await client.workflows.execute_workflow_and_wait_async(
+        workflow_identifier=workflow_name,
+        input=input_data.model_dump(mode="json"),
+        task_queue=os.environ.get("DEPLOYMENT_NAME", "default"),
     )
     print(f"Result: {result}")
 

@@ -12,7 +12,7 @@ mistral_api_key:
   default: ""
   help: "Mistral API key"
 
-temporal_task_queue:
+deployment_name:
   type: str
   default: "default"
-  help: "Temporal task queue name"
+  help: "Deployment name (used as task queue)"
