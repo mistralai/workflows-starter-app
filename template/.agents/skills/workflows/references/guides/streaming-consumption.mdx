@@ -26,10 +26,17 @@ async with get_mistral_client(
     )
 
     # Stream all events for this execution
-    async for event in client.workflows.events.get_stream_events(
+    event_stream = await client.workflows.events.get_stream_events_async(
         workflow_exec_id=execution.execution_id,
-    ):
-        print(f"[{event.stream}] {event.data}")
+    )
+    async with event_stream:
+        async for sse_event in event_stream:
+            payload = sse_event.data
+            if payload is None:
+                continue  # skip heartbeat/comment SSE lines
+            event_data = payload.data  # typed event response
+            event_type = event_data.event_type
+            print(f"[{payload.stream}] type={event_type} data={event_data}")
 ```
 
 ### Filtering by Stream Name
@@ -37,48 +44,65 @@ async with get_mistral_client(
 Only receive events from a specific stream:
 
 ```python
-async for event in client.workflows.events.get_stream_events(
+event_stream = await client.workflows.events.get_stream_events_async(
     workflow_exec_id=execution_id,
     stream="token",  # Only token events
-):
-    print(event.data)
+)
+async with event_stream:
+    async for sse_event in event_stream:
+        payload = sse_event.data
+        if payload is None:
+            continue
+        print(payload.data)
 ```
 
 ### Detecting Completion
 
-Internal status events tell you when workflows/activities start and finish:
+Use `event_type` on the typed event data to detect workflow lifecycle events:
 
 ```python
-async for event in client.workflows.events.get_stream_events(
+event_stream = await client.workflows.events.get_stream_events_async(
     workflow_exec_id=execution_id,
-):
-    if event.stream == "__internal_status__":
-        status = event.data.get("status")
-        if status == "WORKFLOW_COMPLETED":
+)
+async with event_stream:
+    async for sse_event in event_stream:
+        payload = sse_event.data
+        if payload is None or payload.data is None:
+            continue
+
+        event = payload.data
+        event_type = event.event_type
+
+        if event_type == "WORKFLOW_EXECUTION_COMPLETED":
             print("Done!")
             break
-        elif status == "WORKFLOW_FAILED":
-            print(f"Failed: {event.data.get('message')}")
+        elif event_type in ("WORKFLOW_EXECUTION_FAILED", "WORKFLOW_EXECUTION_CANCELED"):
+            print(f"Ended: {event_type}")
             break
-    else:
-        # Handle your custom events
-        record_event(event)
+        else:
+            # Handle your custom events
+            record_event(event)
 ```
 
 ### Resume from Sequence
 
-If your connection drops, resume from where you left off:
+If your connection drops, resume from where you left off using `start_seq`:
 
 ```python
 last_seq = 0
 while True:
     try:
-        async for event in client.workflows.events.get_stream_events(
+        event_stream = await client.workflows.events.get_stream_events_async(
             workflow_exec_id=execution_id,
             start_seq=last_seq,
-        ):
-            last_seq = event.sequence
-            process(event)
+        )
+        async with event_stream:
+            async for sse_event in event_stream:
+                payload = sse_event.data
+                if payload is None:
+                    continue
+                last_seq = payload.broker_sequence + 1
+                process(payload)
         break  # Completed normally
     except ConnectionError:
         await asyncio.sleep(1)
@@ -186,11 +210,11 @@ curl -N "http://localhost:8000/v1/workflows/executions/${EXEC_ID}/stream?stream=
 Response (Server-Sent Events):
 
 ```
-data: {"stream":"token","sequence":1,"data":"Hello","workflow_context":{...}}
+data: {"stream":"token","data":{"event_type":"CUSTOM_TASK_IN_PROGRESS",...},"broker_sequence":1,"workflow_context":{...}}
 
-data: {"stream":"token","sequence":2,"data":" world","workflow_context":{...}}
+data: {"stream":"token","data":{"event_type":"CUSTOM_TASK_IN_PROGRESS",...},"broker_sequence":2,"workflow_context":{...}}
 
-data: {"stream":"__internal_status__","sequence":3,"data":{"status":"WORKFLOW_COMPLETED"},...}
+data: {"stream":"token","data":{"event_type":"WORKFLOW_EXECUTION_COMPLETED",...},"broker_sequence":3,"workflow_context":{...}}
 ```
 
 ### Example: All Events with Wildcard
@@ -228,13 +252,18 @@ class ParentWorkflow:
 
 ```python
 ## Get events from parent AND all children
-async for event in client.workflows.events.get_stream_events(
-    root_workflow_exec_id=parent_execution_id,
-):
-    if event.workflow_context.parent_workflow_exec_id:
-        print(f"[child] {event.data}")
-    else:
-        print(f"[parent] {event.data}")
+event_stream = await client.workflows.events.get_stream_events_async(
+    workflow_exec_id=parent_execution_id,
+)
+async with event_stream:
+    async for sse_event in event_stream:
+        payload = sse_event.data
+        if payload is None:
+            continue
+        if payload.workflow_context.parent_workflow_exec_id:
+            print(f"[child] {payload.data}")
+        else:
+            print(f"[parent] {payload.data}")
 ```
 
 ### Filtering by Root ID
@@ -246,32 +275,53 @@ Using NATS wildcards to get all events in a workflow tree:
 *.*.{root_exec_id}.*.*.*.>
 ```
 
-## Internal Status Events
+## Event Types
 
-The Workflows SDK automatically publishes status events on `__internal_status__`:
+The SDK uses typed event responses discriminated by `event_type`. The full list of event types:
 
-| Status               | Description                    |
-| -------------------- | ------------------------------ |
-| `WORKFLOW_RUNNING`   | Workflow started               |
-| `WORKFLOW_COMPLETED` | Workflow finished successfully |
-| `WORKFLOW_FAILED`    | Workflow failed                |
-| `ACTIVITY_RUNNING`   | Activity started               |
-| `ACTIVITY_COMPLETED` | Activity finished              |
-| `ACTIVITY_FAILED`    | Activity failed                |
-| `ACTIVITY_RETRYING`  | Activity is retrying           |
+| Event Type                           | Description                    |
+| ------------------------------------ | ------------------------------ |
+| `WORKFLOW_EXECUTION_STARTED`         | Workflow started               |
+| `WORKFLOW_EXECUTION_COMPLETED`       | Workflow finished successfully |
+| `WORKFLOW_EXECUTION_FAILED`          | Workflow failed                |
+| `WORKFLOW_EXECUTION_CANCELED`        | Workflow was canceled          |
+| `WORKFLOW_EXECUTION_CONTINUED_AS_NEW`| Workflow continued as new      |
+| `WORKFLOW_TASK_TIMED_OUT`            | Workflow task timed out        |
+| `WORKFLOW_TASK_FAILED`               | Workflow task failed           |
+| `CUSTOM_TASK_STARTED`                | Custom task started            |
+| `CUSTOM_TASK_IN_PROGRESS`            | Custom task progress update    |
+| `CUSTOM_TASK_COMPLETED`              | Custom task completed          |
+| `CUSTOM_TASK_FAILED`                 | Custom task failed             |
+| `CUSTOM_TASK_TIMED_OUT`              | Custom task timed out          |
+| `CUSTOM_TASK_CANCELED`               | Custom task canceled           |
+| `ACTIVITY_TASK_STARTED`              | Activity started               |
+| `ACTIVITY_TASK_COMPLETED`            | Activity finished              |
+| `ACTIVITY_TASK_RETRYING`             | Activity is retrying           |
+| `ACTIVITY_TASK_FAILED`               | Activity failed                |
 
-### Example Status Event
+Each event type maps to a specific Pydantic model (e.g. `WorkflowExecutionCompletedResponse`,
+`CustomTaskInProgressResponse`) with fields like `event_id`, `event_timestamp`, `workflow_exec_id`,
+`workflow_name`, and type-specific `attributes`.
+
+### Example Event
 
 ```json
 {
-  "stream": "__internal_status__",
-  "sequence": 1,
+  "stream": "token",
+  "broker_sequence": 1,
+  "timestamp": "2025-01-15T10:30:00Z",
   "data": {
-    "status": "WORKFLOW_RUNNING",
-    "message": "Starting workflow 'my-workflow'"
+    "event_type": "WORKFLOW_EXECUTION_STARTED",
+    "event_id": "evt_abc123",
+    "event_timestamp": 1736938200000000000,
+    "workflow_name": "my-workflow",
+    "workflow_exec_id": "abc123",
+    "root_workflow_exec_id": "abc123",
+    "parent_workflow_exec_id": null,
+    "workflow_run_id": "run_456",
+    "attributes": {}
   },
   "workflow_context": {
-    "namespace": "prod",
     "workflow_name": "my-workflow",
     "workflow_exec_id": "abc123",
     "parent_workflow_exec_id": null
@@ -289,15 +339,18 @@ async def resilient_consume(client, exec_id):
 
     for attempt in range(max_retries):
         try:
-            async for event in client.workflows.events.get_stream_events(
+            event_stream = await client.workflows.events.get_stream_events_async(
                 workflow_exec_id=exec_id,
-                start_seq=last_seq,
-            ):
-                last_seq = event.sequence
-                yield event
+            )
+            async with event_stream:
+                async for sse_event in event_stream:
+                    payload = sse_event.data
+                    if payload is None:
+                        continue
+                    yield payload
 
-                if is_terminal_status(event):
-                    return
+                    if is_terminal_event(payload.data):
+                        return
         except ConnectionError:
             await asyncio.sleep(min(2 ** attempt, 30))
 ```
@@ -308,13 +361,23 @@ Filter at the subscription level, not in your code:
 
 ```python
 ## Good: Filter at source
-async for event in client.workflows.events.get_stream_events(exec_id, stream="token"):
-    process(event)
+event_stream = await client.workflows.events.get_stream_events_async(
+    workflow_exec_id=exec_id,
+    stream="token",
+)
+async with event_stream:
+    async for sse_event in event_stream:
+        if sse_event.data is not None:
+            process(sse_event.data)
 
 ## Bad: Filter in code (wastes bandwidth)
-async for event in client.workflows.events.get_stream_events(exec_id):
-    if event.stream == "token":
-        process(event)
+event_stream = await client.workflows.events.get_stream_events_async(
+    workflow_exec_id=exec_id,
+)
+async with event_stream:
+    async for sse_event in event_stream:
+        if sse_event.data and sse_event.data.stream == "token":
+            process(sse_event.data)
 ```
 
 ### 3. Use Appropriate Scope
@@ -322,9 +385,14 @@ async for event in client.workflows.events.get_stream_events(exec_id):
 If you only care about activity events:
 
 ```python
-async for event in client.workflows.events.get_stream_events(exec_id, scope="activity"):
-    # Only activity events, no workflow-level events
-    process(event)
+event_stream = await client.workflows.events.get_stream_events_async(
+    workflow_exec_id=exec_id, scope="activity"
+)
+async with event_stream:
+    async for sse_event in event_stream:
+        if sse_event.data is not None:
+            # Only activity events, no workflow-level events
+            process(sse_event.data)
 ```
 
 ## Next Steps

@@ -37,6 +37,22 @@ async def my_activity(input_data: str, count: int = 1) -> dict:
     return {"result": input_data, "processed_count": count}
 ```
 
+:::warning
+**All activity parameters and return types must have type annotations.** An activity missing any type hint on its arguments or return value will fail validation at registration time. Always provide explicit types for every parameter and the return type.
+
+```python
+## ❌ Invalid - missing type annotations
+@workflows.activity()
+async def bad_activity(data, count=1):
+    return {"result": data}
+
+## ✅ Valid - all parameters and return type are annotated
+@workflows.activity()
+async def good_activity(data: str, count: int = 1) -> dict:
+    return {"result": data}
+```
+:::
+
 ## Core Activity Features
 
 ### 1. Activity Naming

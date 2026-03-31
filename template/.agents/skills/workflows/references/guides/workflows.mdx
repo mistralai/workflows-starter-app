@@ -235,11 +235,32 @@ import mistralai.workflows as workflows
 
 @workflows.workflow.define(name="report_workflow")
 class MyWorkflow:
+    @workflows.workflow.entrypoint
     async def run(self, report_type: str, include_details: bool = False) -> dict:
         """Workflow implementation"""
         # Orchestrate activities here
         pass
 ```
+
+:::warning
+**All workflow entrypoint parameters and return types must have type annotations.** An entrypoint missing any type hint on its arguments or return value will fail validation at registration time. Always provide explicit types for every parameter and the return type.
+
+```python
+## ❌ Invalid - missing type annotations
+@workflows.workflow.define(name="my_workflow")
+class BadWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, data, count=1):
+        pass
+
+## ✅ Valid - all parameters and return type are annotated
+@workflows.workflow.define(name="my_workflow")
+class GoodWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, data: str, count: int = 1) -> dict:
+        pass
+```
+:::
 
 ## Workflow Input
 

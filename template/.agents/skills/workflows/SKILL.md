@@ -21,7 +21,7 @@ The documentation is organized into several categories:
 - **[Introduction](references/getting-started/introduction.mdx)**: Overview of Mistral Workflows and its core architecture
 - **[Installation](references/getting-started/installation.mdx)**: Guide to installing and setting up the Workflows framework (CLI scaffolding, optional deps)
 - **[Core Concepts](references/getting-started/core-concepts.mdx)**: Workflows, activities, workers, executions vs runs
-- **[Python SDK](references/getting-started/python-sdk.mdx)**: Documentation for the Python SDK and get_mistral_client
+- **[Python SDK](references/getting-started/python-sdk.mdx)**: Documentation for the Python SDK and WorkflowsClient
 - **[Your First Workflow](references/getting-started/your-first-workflow.mdx)**: Step-by-step guide to creating your first workflow
 
 ### Guides
@@ -34,7 +34,7 @@ The documentation is organized into several categories:
 - **[Scheduling](references/guides/scheduling.mdx)**: Cron expressions, ScheduleDefinition, SchedulePolicy, overlap handling
 - **[Dependency Injection](references/guides/dependency-injection.mdx)**: FastAPI-style Depends() pattern
 - **[Streaming](references/guides/streaming.mdx)**: Task API, token streaming, progress updates
-- **[Streaming Consumption](references/guides/streaming-consumption.mdx)**: client.workflows.events.get_stream_events(), NATS subjects, SSE API
+- **[Streaming Consumption](references/guides/streaming-consumption.mdx)**: WorkflowsClient.stream_events(), NATS subjects, SSE API
 - **[Concurrency](references/guides/concurrency.mdx)**: execute_activities_in_parallel() with List/Chain/Offset executors
 - **[Rate Limiting](references/guides/rate-limiting.mdx)**: Distributed rate limiting across workers
 - **[Handling Large Data](references/guides/handling-large-data.mdx)**: OffloadableField, blob storage (S3/Azure/GCS)
@@ -47,6 +47,25 @@ The documentation is organized into several categories:
 - **[Workflows Plugins](references/guides/workflows-plugins.mdx)**: Mistral AI plugin, Webhook plugin, Nuage plugin, custom plugins
 - **[Deployment Patterns](references/guides/_deployment-patterns.mdx)**: Best practices for deploying workflows
 - **[Migration v2 to v3](references/guides/migration-v2-to-v3.md)**: Breaking changes and upgrade steps from SDK v2 to v3
+
+### Testing
+
+- **[Testing Workflows](references/guides/testing.md)**: Integration testing with `create_test_worker`, hang prevention, sandbox pitfalls
+
+**Quick-test script** — run any workflow in a local Temporal test environment with zero setup:
+```bash
+python .agents/skills/workflows/scripts/test_workflow.py <workflow_file> --input '{"key": "value"}' [--timeout 30]
+```
+
+**Timeout policy for testing:** Use aggressive (short) timeouts to keep the feedback loop tight. A hanging test wastes more time than a false timeout. Defaults:
+
+| Context | Recommended timeout | When to increase |
+|---|---|---|
+| `--timeout` (quick-test script) | `15` seconds | Workflow makes multiple LLM calls or heavy I/O |
+| `execution_timeout` (pytest) | `timedelta(seconds=10)` | Known long-running workflow |
+| `asyncio.wait_for` (pytest) | `15` seconds | Should always be slightly above `execution_timeout` |
+
+If a workflow is known to be long-running (e.g. multi-step agent, large data processing), increase timeouts proportionally — but start short and only raise them when you see legitimate timeout failures, not preemptively.
 
 ### Internal References
 
