@@ -12,7 +12,7 @@ uv sync
 
 ### Register workflows in AI Studio
 
-Auto-discovers all workflow classes in `src/workflows/`, registers them with AI Studio, and starts polling for executions. The task queue is set to your hostname:
+Auto-discovers all workflow classes in `src/workflows/`, registers them with AI Studio, and starts polling for executions. The [deployment name](https://docs.mistral.ai/workflows/managing-workflows-in-production/deployments) is set to your hostname:
 
 ```bash
 make start-worker

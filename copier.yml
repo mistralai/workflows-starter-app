@@ -15,4 +15,4 @@ mistral_api_key:
 deployment_name:
   type: str
   default: "default"
-  help: "Deployment name (used as task queue)"
+  help: "Deployment name (used to identify the deployment in AI Studio)"
