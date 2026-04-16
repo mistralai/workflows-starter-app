@@ -19,16 +19,8 @@ class _RestartHandler(FileSystemEventHandler):
         self._needs_restart = False
 
     def on_any_event(self, event) -> None:  # type: ignore[override]
-        if event.is_directory:
-            return
-        if any(part == "__pycache__" for part in event.src_path.split(os.sep)):
-            return
-        if getattr(event, "event_type", None) not in {"modified", "created", "deleted", "moved"}:
-            return
         if not event.src_path.endswith(".py"):
-            dest_path = getattr(event, "dest_path", "")
-            if not dest_path.endswith(".py"):
-                return
+            return
         now = time.monotonic()
         if now - self._last_trigger < DEBOUNCE_SECONDS:
             return
