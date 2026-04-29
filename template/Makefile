@@ -25,7 +25,7 @@ execute-insurance-claims:
 ## Execute the cargo-release-compliance example workflow
 ## Usage: make execute-cargo-release input='{"document_uri": "...", "shipment_id": "..."}'
 execute-cargo-release:
-	uv run python src/workflows/start.py --workflow cargo-release-compliance $(if $(input),--input '$(input)',--input '{"document_uri":"examples/cargo_release/sample_data/shipping_doc_normal.txt","shipment_id":"BL-2024-HAM-009371"}')
+	uv run python src/workflows/start.py --workflow cargo-release-compliance $(if $(input),--input '$(input)',--input '{"document_uri":"examples/cargo_release/sample_data/shipping_doc_normal.png","shipment_id":"BL-2024-HAM-009371"}')
 
 ## Execute the code-modernization example workflow
 ## Usage: make execute-code-modernization input='{"repo_path": "...", "target": "Python 2.7 → 3.12"}'
