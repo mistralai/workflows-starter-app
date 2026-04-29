@@ -68,10 +68,10 @@ make execute-code-modernization \
   input='{"repo_path":"/path/to/your/legacy/repo","target":"Python 2.7 → 3.12"}'
 ```
 
-### Via AI Studio
+### Run the workflow in AI Studio
 
 1. Start the examples worker: `make start-examples`
-2. Navigate to Workflows in the Mistral Console.
+2. Navigate to [Workflows in the Mistral Console](https://console.mistral.ai/build/workflows).
 3. Select `code-modernization`.
 4. Click **Start Workflow** with input `{"repo_path": "src/examples/code_modernization/sample_data/legacy_repo", "target": "Python 2.7 → 3.12"}`.
 

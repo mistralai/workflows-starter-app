@@ -2,7 +2,7 @@
 
 Each activity is a discrete, idempotent unit of work:
 
-- ``analyze_photo``        — Pixtral vision call for photo damage assessment
+- ``analyze_photo``        — Mistral Small vision call for photo damage assessment
 - ``check_consistency``    — LLM cross-reference of photo findings vs. description
 - ``score_fraud_risk``     — LLM fraud-risk scoring with structured output
 - ``generate_triage_report`` — LLM final report with cited evidence
@@ -40,7 +40,6 @@ from .models import (
 )
 
 _MODEL = "mistral-small-latest"
-_VISION_MODEL = "pixtral-12b-2409"
 
 
 # ---------------------------------------------------------------------------
@@ -70,7 +69,7 @@ def _resolve_image_uri(photo_uri: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Vision analysis — Pixtral vision call
+# Vision analysis — Mistral Small vision call
 # ---------------------------------------------------------------------------
 
 _VISION_PROMPT = (
@@ -100,13 +99,13 @@ _VISION_PROMPT = (
 async def analyze_photo(photo_uri: str) -> PhotoAnalysisResult:
     """Analyse a single claim photo and return a structured damage assessment.
 
-    Calls Pixtral with the image URI and a structured-output prompt.
+    Calls Mistral Small with the image URI and a structured-output prompt.
     The response is validated against ``PhotoAnalysisResult`` via
     ``chat_parse_to_model``.
     """
     image_url = _resolve_image_uri(photo_uri)
     request = mistralai_models.ChatCompletionRequest(
-        model=_VISION_MODEL,
+        model=_MODEL,
         messages=[
             mistralai_models.UserMessage(
                 content=[
@@ -179,6 +178,7 @@ async def score_fraud_risk(
 
     Returns a dict so Temporal's data converter round-trips it as JSON
     without class-identity issues across the workflow sandbox boundary.
+    Uses Mistral Small for structured reasoning.
     """
     prompt = (
         "You are a fraud detection specialist at an insurance company. "

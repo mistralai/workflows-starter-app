@@ -71,10 +71,10 @@ make execute-cargo-release \
   input='{"document_uri":"src/examples/cargo_release/sample_data/shipping_doc_anomaly.txt","shipment_id":"BL-2024-RTD-004812"}'
 ```
 
-### Via AI Studio
+### Run the workflow in AI Studio
 
 1. Start the examples worker: `make start-examples`
-2. Navigate to Workflows in the Mistral Console.
+2. Navigate to [Workflows in the Mistral Console](https://console.mistral.ai/build/workflows).
 3. Select `cargo-release-compliance`.
 4. Click **Start Workflow** and paste one of the fixtures from `sample_data/`.
 
