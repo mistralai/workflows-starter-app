@@ -1,0 +1,53 @@
+BILL OF LADING — OCEAN FREIGHT
+================================
+Document Number:    BL-2024-RTD-004812
+Issue Date:         2024-11-15
+Port of Loading:    Rotterdam, Netherlands (NLRTM)
+Port of Discharge:  Houston, TX, USA (USHOU)
+Vessel:             Ever Gleam / Voyage 088W
+
+SHIPPER
+-------
+Name:    Benelux Petroleum Supplies BV
+Address: Petroleumhaven 12, 3088 Rotterdam, Netherlands
+Contact: export@beneluxpetro.nl | +31 10 555 0192
+
+CONSIGNEE
+---------
+Name:    Southern Fuel Distributors LLC
+Address: 8200 N Eldridge Pkwy, Houston, TX 77041, USA
+Contact: receiving@southernfuel.com
+
+CARGO DESCRIPTION
+-----------------
+Description:     Motor spirit (regular unleaded gasoline)
+UN Number:       UN 1203
+Proper Ship.Name: GASOLINE
+Hazard Class:    Class 3 — Flammable Liquids
+Packing Group:   II
+Flashpoint:      -43°C
+Quantity:        ISO tank T14, 24 000 litres
+Gross Weight:    17 280 kg
+Volume:          N/A (bulk liquid)
+Marks/Numbers:   SFD-HOU / BLP-20241115
+
+CUSTOMS & COMPLIANCE
+--------------------
+Country of Origin:   Netherlands
+Declared Value:      USD 28 800
+Incoterms:           FOB Rotterdam
+HS Code:             2710.12.4100
+MSDS:                Attached (ref MSDS-BP-1203-2024)
+Segregation:         Class 3 — stow away from heat sources
+Emergency Contact:   [MISSING — field left blank on original document]
+
+FREIGHT TERMS
+-------------
+Freight:         Collect
+Freight Amount:  USD 3 600
+
+Authorised signature: ___________________________
+Carrier representative, Rotterdam ECT Terminal
+
+NOTE: Emergency contact field was not completed by shipper.
+Carrier flagged at gate. Manual review required before vessel departure.

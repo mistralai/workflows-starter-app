@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
+from mistralai.extra.workflows import WorkflowEncodingConfig, configure_workflow_encoding
 from mistralai.workflows.client import get_mistral_client
 
 
@@ -58,6 +59,10 @@ async def main() -> None:
         api_key=api_key,
         server_url=os.environ.get("SERVER_URL", "https://api.mistral.ai"),
     )
+
+    # Enable client-side payload encoding so the Workflows API receives
+    # pre-encoded payloads and does not apply its own server-side encryption.
+    await configure_workflow_encoding(WorkflowEncodingConfig(), client=client)
 
     result = await client.workflows.execute_workflow_and_wait_async(
         workflow_identifier=workflow_name,
