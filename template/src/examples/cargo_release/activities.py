@@ -8,10 +8,38 @@ schedules them on a worker and persists the results in event history.
 
 from datetime import timedelta
 
+import base64
+import mimetypes
+from pathlib import Path
+from urllib.parse import unquote
+from urllib.request import url2pathname
+
 import mistralai.workflows as workflows
 import mistralai.workflows.plugins.mistralai as workflows_mistralai
+from mistralai.client.models import DocumentURLChunk, OCRRequest
 
 from .models import CargoClassification, ComplianceCheck, DangerousGoodsResult
+
+
+def _resolve_document_uri(document_uri: str) -> str:
+    """Convert a local path or ``file://`` URI to a base64 data URI for the OCR API.
+
+    HTTPS URLs and existing data URIs are returned as-is. Local paths and
+    ``file://`` URIs are read from disk and encoded as
+    ``data:<mime>;base64,...`` so the OCR API can consume them without
+    requiring network access to the local filesystem.
+    """
+    if document_uri.startswith(("https://", "data:")):
+        return document_uri
+
+    if document_uri.startswith("file://"):
+        path = Path(url2pathname(unquote(document_uri[7:])))
+    else:
+        path = Path(document_uri)
+
+    mime = mimetypes.guess_type(str(path))[0] or "text/plain"
+    data = base64.b64encode(path.read_bytes()).decode()
+    return f"data:{mime};base64,{data}"
 
 
 @workflows.activity(
@@ -25,7 +53,13 @@ from .models import CargoClassification, ComplianceCheck, DangerousGoodsResult
 )
 async def ocr_extract_shipping_doc(document_uri: str) -> str:
     """Return the plain-text content of a shipping document via Mistral OCR."""
-    return await workflows_mistralai.mistralai_ocr(file_url=document_uri)
+    response = await workflows_mistralai.mistralai_ocr(
+        params=OCRRequest(
+            model="mistral-ocr-latest",
+            document=DocumentURLChunk(document_url=_resolve_document_uri(document_uri)),
+        )
+    )
+    return "\n\n".join(page.markdown for page in response.pages)
 
 
 @workflows.activity(
