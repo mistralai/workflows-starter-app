@@ -3,13 +3,35 @@
 
 import asyncio
 import importlib
-from dotenv import load_dotenv
-
 import inspect
+import os
 import pkgutil
 import sys
+from dotenv import load_dotenv
 
-load_dotenv(override=True)
+DEFAULT_SERVER_URL = "https://api.mistral.ai"
+SERVER_URL_ENV_VAR = "SERVER_URL"
+LEGACY_SERVER_URL_ENV_VAR = "MISTRAL_SERVER_URL"
+
+
+def load_project_env() -> None:
+    load_dotenv(override=True)
+
+    if os.environ.get(SERVER_URL_ENV_VAR):
+        return
+
+    legacy_server_url = os.environ.get(LEGACY_SERVER_URL_ENV_VAR)
+    if not legacy_server_url:
+        return
+
+    os.environ[SERVER_URL_ENV_VAR] = legacy_server_url
+    print(
+        "Warning: MISTRAL_SERVER_URL is deprecated. Rename it to SERVER_URL.",
+        file=sys.stderr,
+    )
+
+
+load_project_env()
 
 import mistralai.workflows as workflows
 from mistralai.workflows.core.definition.workflow_definition import (

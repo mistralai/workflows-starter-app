@@ -5,12 +5,42 @@ import argparse
 import asyncio
 import json
 import os
+import sys
 
 from dotenv import load_dotenv
 
-load_dotenv(override=True)
+DEFAULT_SERVER_URL = "https://api.mistral.ai"
+SERVER_URL_ENV_VAR = "SERVER_URL"
+LEGACY_SERVER_URL_ENV_VAR = "MISTRAL_SERVER_URL"
 
-from mistralai.extra.workflows import WorkflowEncodingConfig, configure_workflow_encoding
+
+def load_project_env() -> None:
+    load_dotenv(override=True)
+
+    if os.environ.get(SERVER_URL_ENV_VAR):
+        return
+
+    legacy_server_url = os.environ.get(LEGACY_SERVER_URL_ENV_VAR)
+    if not legacy_server_url:
+        return
+
+    os.environ[SERVER_URL_ENV_VAR] = legacy_server_url
+    print(
+        "Warning: MISTRAL_SERVER_URL is deprecated. Rename it to SERVER_URL.",
+        file=sys.stderr,
+    )
+
+
+def get_server_url() -> str:
+    return os.environ.get(SERVER_URL_ENV_VAR, DEFAULT_SERVER_URL)
+
+
+load_project_env()
+
+from mistralai.extra.workflows import (
+    WorkflowEncodingConfig,
+    configure_workflow_encoding,
+)
 from mistralai.workflows.client import get_mistral_client
 
 
@@ -57,7 +87,7 @@ async def main() -> None:
 
     client = get_mistral_client(
         api_key=api_key,
-        server_url=os.environ.get("SERVER_URL", "https://api.mistral.ai"),
+        server_url=get_server_url(),
     )
 
     # Enable client-side payload encoding so the Workflows API receives
