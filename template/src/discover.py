@@ -3,13 +3,13 @@
 
 import asyncio
 import importlib
-from dotenv import load_dotenv
-
 import inspect
 import pkgutil
 import sys
 
-load_dotenv(override=True)
+from env_config import load_project_env
+
+load_project_env()
 
 import mistralai.workflows as workflows
 from mistralai.workflows.core.definition.workflow_definition import (

@@ -6,11 +6,14 @@ import asyncio
 import json
 import os
 
-from dotenv import load_dotenv
+from env_config import get_server_url, load_project_env
 
-load_dotenv(override=True)
+load_project_env()
 
-from mistralai.extra.workflows import WorkflowEncodingConfig, configure_workflow_encoding
+from mistralai.extra.workflows import (
+    WorkflowEncodingConfig,
+    configure_workflow_encoding,
+)
 from mistralai.workflows.client import get_mistral_client
 
 
@@ -57,7 +60,7 @@ async def main() -> None:
 
     client = get_mistral_client(
         api_key=api_key,
-        server_url=os.environ.get("SERVER_URL", "https://api.mistral.ai"),
+        server_url=get_server_url(),
     )
 
     # Enable client-side payload encoding so the Workflows API receives
