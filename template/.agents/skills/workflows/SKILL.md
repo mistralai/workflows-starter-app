@@ -1,20 +1,37 @@
 ---
 name: workflows
-description: Framework for building durable workflows with orchestrated activities, used for background jobs, multi-step pipelines, scheduled tasks, LLM agents, or any process requiring fault tolerance, retries, and long-running execution. This skill provides comprehensive documentation and guidance for working with the Mistral Workflows framework.
+description: "Scaffold, configure, and debug Mistral Workflows — durable workflow definitions, activity handlers, retry policies, scheduling, streaming, and durable AI agents. Use when the user asks about Mistral Workflows, durable execution, task orchestration, job queues, workflow pipelines, activity retries, workflow signals/queries, or the mistralai.workflows Python SDK."
 license: Complete terms in LICENSE.txt
 ---
 
-# Workflows Documentation
+# Mistral Workflows
 
-This skill provides comprehensive documentation and guidance for the Mistral Workflows framework, which is designed for building durable, fault-tolerant workflows with orchestrated activities.
+Scaffold workflow definitions, configure activity handlers and retry policies, set up scheduling, streaming, and durable AI agents using the `mistralai.workflows` Python SDK.
 
-## About Workflows
+## Quick Start
 
-Mistral Workflows is an orchestration control plane that accelerates the development and reliable execution of complex, AI-driven workflows. Built on Temporal for fault-tolerant workflow execution, it combines a user-friendly API with a rich Python framework optimized for Mistral's AI services.
+Minimal workflow with one activity:
 
-## Documentation Structure
+```python
+import mistralai.workflows as workflows
 
-The documentation is organized into several categories:
+@workflows.activity()
+async def hello_world(name: str) -> dict:
+    return {"message": f"Hello, {name}!"}
+
+@workflows.workflow.define(name="simple_example_workflow")
+class SimpleExampleWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, name: str) -> dict:
+        return await hello_world(name)
+
+async def main() -> None:
+    await workflows.run_worker([SimpleExampleWorkflow])
+```
+
+Run with `uv run python my_workflow.py`, then trigger from [AI Studio](https://console.mistral.ai/build/workflows).
+
+## Reference Documentation
 
 ### Getting Started
 
@@ -46,7 +63,7 @@ The documentation is organized into several categories:
 - **[Limitations](references/guides/limitations.mdx)**: System constraints and limits
 - **[Workflows Plugins](references/guides/workflows-plugins.mdx)**: Mistral AI plugin, Webhook plugin, Nuage plugin, custom plugins
 - **[Deployment Patterns](references/guides/_deployment-patterns.mdx)**: Best practices for deploying workflows
-- **[Migration v2 to v3](references/guides/migration-v2-to-v3.md)**: Breaking changes and upgrade steps from SDK v2 to v3
+- **[Migration v2 to v3](references/guides/migration-v2-to-v3.mdx)**: Breaking changes and upgrade steps from SDK v2 to v3
 
 ### Testing
 
@@ -75,32 +92,3 @@ These are additional patterns and utilities not covered in the official docs:
 - **[Pipeline Pattern](references/pipeline_pattern.md)**: Build multi-step workflows with declarative StepSpec definitions
 - **[Progress Decorator](references/progress_decorator.md)**: Track workflow step progress with automatic event recording
 - **[Workflow Testing](references/workflow_testing.md)**: Ensure workflow classes are properly registered in workers
-
-## When to Use This Skill
-
-Use this skill when you need to:
-
-1. **Build durable workflows**: Create long-running, fault-tolerant processes
-2. **Orchestrate activities**: Coordinate multiple tasks and operations
-3. **Handle background jobs**: Manage asynchronous processing and task queues
-4. **Create multi-step pipelines**: Build complex workflows with multiple stages
-5. **Schedule tasks**: Set up recurring or delayed execution of workflows
-6. **Develop LLM agents**: Build durable AI agents with MCP tool support
-7. **Build conversational workflows**: Create interactive workflows with HITL, forms, canvas, and rich UI
-8. **Ensure fault tolerance**: Implement systems that can recover from failures automatically
-9. **Stream events**: Real-time token streaming and progress updates via NATS
-
-## Key Features
-
-- **Fault tolerance**: Automatic recovery from failures and retries
-- **Durable execution**: Workflows can run for extended periods (seconds to years)
-- **Determinism enforcement**: Sandbox-based determinism with configurable enforcement
-- **Rich Python framework**: Easy-to-use decorators and APIs (`mistralai.workflows`)
-- **Built-in observability**: Deep integration with OpenTelemetry for monitoring
-- **Streaming**: NATS-backed real-time token and progress streaming
-- **Rate limiting**: Distributed rate limiting shared across workers
-- **Dependency injection**: FastAPI-style Depends() pattern
-- **Large payload handling**: OffloadableField with S3/Azure/GCS blob storage
-- **Conversational workflows**: Interactive workflows with Le Chat integration, forms, canvas, and rich UI components
-- **Durable agents**: AI agents with MCP support, multi-agent handoffs, and persistent state
-- **Scalability**: Designed to handle complex, distributed applications
