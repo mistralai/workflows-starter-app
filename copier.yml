@@ -1,6 +1,9 @@
 _min_copier_version: "9.0.0"
 _subdirectory: "template"
 
+_tasks:
+  - "uv sync"
+
 project_name:
   type: str
   default: "my-workflow"
