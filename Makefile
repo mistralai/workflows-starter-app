@@ -13,6 +13,7 @@ integration-test:
 	$(MAKE) _test-start-examples
 	$(MAKE) _test-execute-help
 	$(MAKE) _test-execute-bad-json
+	$(MAKE) _test-wheel-contents
 	@echo ""
 	@echo "All integration tests passed."
 
@@ -54,3 +55,11 @@ _test-execute-bad-json:
 		| grep -q "invalid JSON" \
 		&& echo "OK: bad JSON rejected" \
 		|| (echo "FAIL: bad JSON not rejected" && exit 1)
+
+_test-wheel-contents:
+	@echo "--- test: built wheel ships the entrypoints package"
+	cd $(GENERATED_PROJECT) && rm -rf dist && uv build --wheel > /dev/null
+	cd $(GENERATED_PROJECT) && unzip -l dist/*.whl \
+		| grep -q "entrypoints/worker.py" \
+		&& echo "OK: wheel contains entrypoints package" \
+		|| (echo "FAIL: wheel is missing the entrypoints package" && exit 1)
