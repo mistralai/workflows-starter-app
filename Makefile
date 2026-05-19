@@ -9,6 +9,7 @@ integration-test:
 	cd $(GENERATED_PROJECT) && uv sync
 	$(MAKE) _test-discover
 	$(MAKE) _test-start-worker
+	$(MAKE) _test-start-worker-module
 	$(MAKE) _test-start-examples
 	$(MAKE) _test-execute-help
 	$(MAKE) _test-execute-bad-json
@@ -26,6 +27,13 @@ _test-start-worker:
 		| grep -q "Discovered .* workflow(s)" \
 		&& echo "OK: worker discovered workflows" \
 		|| (echo "FAIL: worker did not print discovery message" && exit 1)
+
+_test-start-worker-module:
+	@echo "--- test: python -m worker discovers workflows before connecting"
+	cd $(GENERATED_PROJECT) && uv run python -m worker 2>&1 \
+		| grep -q "Discovered .* workflow(s)" \
+		&& echo "OK: worker module discovered workflows" \
+		|| (echo "FAIL: worker module did not print discovery message" && exit 1)
 
 _test-start-examples:
 	@echo "--- test: examples.worker loads example workflows before connecting"
