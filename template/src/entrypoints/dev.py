@@ -1,4 +1,4 @@
-"""Watch src/ for .py changes and auto-restart the workflow worker."""
+"""Watch the project for .py changes and auto-restart the workflow worker."""
 
 import os
 import signal
@@ -9,7 +9,8 @@ import time
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
-WATCH_DIR = os.path.join(os.path.dirname(__file__))
+# Watch the `src/` directory (parent of this package).
+WATCH_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEBOUNCE_SECONDS = 1.0
 
 
@@ -35,9 +36,7 @@ class _RestartHandler(FileSystemEventHandler):
 
 
 def _start_worker() -> subprocess.Popen:
-    return subprocess.Popen(
-        [sys.executable, os.path.join(os.path.dirname(__file__), "discover.py")],
-    )
+    return subprocess.Popen([sys.executable, "-m", "entrypoints.worker"])
 
 
 def _stop_worker(proc: subprocess.Popen) -> None:
