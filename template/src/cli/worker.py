@@ -1,4 +1,4 @@
-"""Auto-discover all workflow classes in src/workflows/ and start a worker."""
+"""Auto-discover all workflow classes in the `workflows` package and start a worker."""
 # ruff: noqa: E402
 
 import asyncio
@@ -11,14 +11,14 @@ import sys
 
 load_dotenv(override=True)
 
-import mistralai.workflows as workflows
+import mistralai.workflows as mistral_workflows
 from mistralai.workflows.core.definition.workflow_definition import (
     get_workflow_definition,
 )
 
 
 def discover_workflows() -> list[type]:
-    """Scan the workflows package and return all workflow classes."""
+    """Scan the `workflows` package and return all workflow classes."""
     discovered = []
     package = importlib.import_module("workflows")
 
@@ -39,13 +39,13 @@ async def main() -> None:
     discovered = discover_workflows()
 
     if not discovered:
-        print("No workflows discovered in src/workflows/")
+        print("No workflows discovered in the `workflows` package.")
         sys.exit(1)
 
     names = [get_workflow_definition(wf).name for wf in discovered]
     print(f"Discovered {len(discovered)} workflow(s): {', '.join(names)}")
 
-    await workflows.run_worker(discovered)
+    await mistral_workflows.run_worker(discovered)
 
 
 if __name__ == "__main__":

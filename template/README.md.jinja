@@ -33,6 +33,8 @@ The `src/examples/` directory contains complete workflow cookbooks that demonstr
 | Example | Description |
 |---|---|
 | [Insurance Claims Triage](src/examples/insurance_claims/) | Parallel vision analysis, retry policies, deterministic branching, structured LLM output |
+| [Cargo Release Compliance](src/examples/cargo_release/) | HITL `wait_for_input()`, child sub-workflows, retry policies, structured LLM output |
+| [Code Modernization](src/examples/code_modernization/) | Sub-workflow fan-out, sandboxed validation, retry-loop, HITL approval |
 
 ### Start the examples worker
 
@@ -44,6 +46,18 @@ Then trigger an execution in a separate terminal:
 
 ```bash
 make execute-insurance-claims input='{"claim_id":"CLM-001","claimant_name":"Jane","description":"My car was hit.","photos":["src/examples/insurance_claims/sample_data/photos/claim_low_scratch_door.jpg"]}'
+```
+
+## Project layout
+
+```
+src/
+├── cli/         # Entrypoints, runnable via `python -m cli.<module>`
+│   ├── worker.py   # `python -m cli.worker` — discover and run workflows
+│   ├── start.py    # `python -m cli.start`  — trigger a workflow execution
+│   └── dev.py      # `python -m cli.dev`    — worker with file-watch auto-reload
+├── workflows/   # Your workflow classes (auto-discovered by `cli.worker`)
+└── examples/    # Example workflow cookbooks (opt-in via `examples.worker`)
 ```
 
 ## Development
