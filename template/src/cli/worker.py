@@ -11,7 +11,7 @@ import sys
 
 load_dotenv(override=True)
 
-import mistralai.workflows as mistral_workflows
+import mistralai.workflows as mistralai_workflows
 from mistralai.workflows.core.definition.workflow_definition import (
     get_workflow_definition,
 )
