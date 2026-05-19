@@ -52,11 +52,11 @@ make execute-insurance-claims input='{"claim_id":"CLM-001","claimant_name":"Jane
 
 ```
 src/
-├── cli/         # Entrypoints, runnable via `python -m cli.<module>`
-│   ├── worker.py   # `python -m cli.worker` — discover and run workflows
-│   ├── start.py    # `python -m cli.start`  — trigger a workflow execution
-│   └── dev.py      # `python -m cli.dev`    — worker with file-watch auto-reload
-├── workflows/   # Your workflow classes (auto-discovered by `cli.worker`)
+├── entrypoints/ # Runnable modules, invoked via `python -m entrypoints.<module>`
+│   ├── worker.py   # `python -m entrypoints.worker` — discover and run workflows
+│   ├── start.py    # `python -m entrypoints.start`  — trigger a workflow execution
+│   └── dev.py      # `python -m entrypoints.dev`    — worker with file-watch auto-reload
+├── workflows/   # Your workflow classes (auto-discovered by `entrypoints.worker`)
 └── examples/    # Example workflow cookbooks (opt-in via `examples.worker`)
 ```
 

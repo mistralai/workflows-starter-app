@@ -19,11 +19,11 @@ integration-test:
 _test-discover:
 	@echo "--- test: workflow discovery"
 	cd $(GENERATED_PROJECT) && uv run python -c \
-		"from cli.worker import discover_workflows; wfs = discover_workflows(); assert len(wfs) > 0, 'No workflows discovered'; print(f'OK: discovered {len(wfs)} workflow(s)')"
+		"from entrypoints.worker import discover_workflows; wfs = discover_workflows(); assert len(wfs) > 0, 'No workflows discovered'; print(f'OK: discovered {len(wfs)} workflow(s)')"
 
 _test-start-worker:
-	@echo "--- test: cli.worker discovers workflows before connecting"
-	cd $(GENERATED_PROJECT) && uv run python -m cli.worker 2>&1 \
+	@echo "--- test: entrypoints.worker discovers workflows before connecting"
+	cd $(GENERATED_PROJECT) && uv run python -m entrypoints.worker 2>&1 \
 		| grep -q "Discovered .* workflow(s)" \
 		&& echo "OK: worker discovered workflows" \
 		|| (echo "FAIL: worker did not print discovery message" && exit 1)
@@ -43,14 +43,14 @@ _test-start-examples:
 		|| (echo "FAIL: examples worker did not print start message" && exit 1)
 
 _test-execute-help:
-	@echo "--- test: cli.start --help"
-	cd $(GENERATED_PROJECT) && uv run python -m cli.start --help > /dev/null 2>&1 \
+	@echo "--- test: entrypoints.start --help"
+	cd $(GENERATED_PROJECT) && uv run python -m entrypoints.start --help > /dev/null 2>&1 \
 		&& echo "OK: --help works" \
 		|| (echo "FAIL: --help failed" && exit 1)
 
 _test-execute-bad-json:
-	@echo "--- test: cli.start rejects invalid JSON"
-	cd $(GENERATED_PROJECT) && uv run python -m cli.start --workflow hello-world --input 'not-json' 2>&1 \
+	@echo "--- test: entrypoints.start rejects invalid JSON"
+	cd $(GENERATED_PROJECT) && uv run python -m entrypoints.start --workflow hello-world --input 'not-json' 2>&1 \
 		| grep -q "invalid JSON" \
 		&& echo "OK: bad JSON rejected" \
 		|| (echo "FAIL: bad JSON not rejected" && exit 1)

@@ -36,7 +36,7 @@ class _RestartHandler(FileSystemEventHandler):
 
 
 def _start_worker() -> subprocess.Popen:
-    return subprocess.Popen([sys.executable, "-m", "cli.worker"])
+    return subprocess.Popen([sys.executable, "-m", "entrypoints.worker"])
 
 
 def _stop_worker(proc: subprocess.Popen) -> None:
