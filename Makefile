@@ -10,6 +10,7 @@ integration-test:
 	$(MAKE) _test-discover
 	$(MAKE) _test-start-worker
 	$(MAKE) _test-start-worker-module
+	$(MAKE) _test-start-worker-importlib
 	$(MAKE) _test-start-examples
 	$(MAKE) _test-execute-help
 	$(MAKE) _test-execute-bad-json
@@ -41,6 +42,17 @@ _test-start-worker-module:
 		| grep -q "Discovered .* workflow(s)" \
 		&& echo "OK: worker module discovered workflows" \
 		|| (echo "FAIL: worker module did not print discovery message" && exit 1)
+
+_test-start-worker-importlib:
+	@echo "--- test: MISTRAL_WORKER_ENTRYPOINT with importlib entrypoint script"
+	cd $(GENERATED_PROJECT) && MISTRAL_WORKER_ENTRYPOINT=worker:main \
+		uv run python -c "import asyncio, importlib, inspect, os; \
+m, f = os.environ['MISTRAL_WORKER_ENTRYPOINT'].split(':', 1); \
+result = getattr(importlib.import_module(m), f)(); \
+asyncio.run(result) if inspect.iscoroutine(result) else None" 2>&1 \
+		| grep -q "Discovered .* workflow(s)" \
+		&& echo "OK: MISTRAL_WORKER_ENTRYPOINT with importlib entrypoint script loaded and discovered workflows" \
+		|| (echo "FAIL: MISTRAL_WORKER_ENTRYPOINT with importlib entrypoint script did not discover workflows" && exit 1)
 
 _test-start-examples:
 	@echo "--- test: examples.worker loads example workflows before connecting"
