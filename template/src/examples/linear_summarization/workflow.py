@@ -16,25 +16,17 @@ import mistralai.workflows.plugins.mistralai as workflows_mistralai
 from mistralai.workflows import workflow
 from mistralai.workflows.plugins.mistralai.connectors import uses_connectors
 from pydantic import BaseModel
-
-# Activities are imported via imports_passed_through so the Temporal sandbox
-# does not try to re-import their transitive deps (mistralai client +
-# connector internals), which trip the sandbox's restriction on
-# urllib.request.Request.__mro_entries__. The activity callables themselves
-# are safe to call from workflow code — the decorator dispatches them via
-# Temporal's task queue, not in the workflow thread.
-with workflow.unsafe.imports_passed_through():
-    from src.examples.linear_summarization.linear_activities import (
-        fetch_linear_projects,
-        fetch_linear_teams,
-        fetch_recent_issues,
-        get_project_id_by_name,
-        get_team_id_by_name,
-        linear_connector,
-    )
-    from src.examples.linear_summarization.summary_activity import (
-        generate_weekly_summary,
-    )
+from src.examples.linear_summarization.linear_activities import (
+    fetch_linear_projects,
+    fetch_linear_teams,
+    fetch_recent_issues,
+    get_project_id_by_name,
+    get_team_id_by_name,
+    linear_connector,
+)
+from src.examples.linear_summarization.summary_activity import (
+    generate_weekly_summary,
+)
 
 
 class LinearWorkflowParams(BaseModel):
