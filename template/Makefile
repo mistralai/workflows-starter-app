@@ -31,3 +31,11 @@ execute-cargo-release:
 ## Usage: make execute-code-modernization input='{"repo_path": "...", "target": "Python 2.7 → 3.12"}'
 execute-code-modernization:
 	uv run python -m entrypoints.start --workflow code-modernization $(if $(input),--input '$(input)',--input '{"repo_path":"src/examples/code_modernization/sample_data/legacy_repo","target":"Python 2.7 → 3.12"}')
+
+## Execute the linear-weekly-summary example workflow
+## Usage (team name): make execute-linear-summary input='{"team":"Engineering","project":"Roadmap"}'
+## Usage (team ID): make execute-linear-summary input='{"team":"<team-uuid>","project":"Roadmap"}'
+## Usage (all projects): make execute-linear-summary input='{"team":"Engineering","project":"*"}'
+## Params: team/project are optional; omit input for interactive selection.
+execute-linear-summary:
+	uv run python -m entrypoints.start --workflow linear-weekly-summary $(if $(input),--input '$(input)',--input '{}')

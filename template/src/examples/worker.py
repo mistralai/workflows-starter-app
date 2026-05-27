@@ -15,6 +15,7 @@ from examples.cargo_release import (
 )
 from examples.code_modernization import CodeModernizationWorkflow, ModernizeFileWorkflow
 from examples.insurance_claims import InsuranceClaimsTriageWorkflow
+from examples.linear_summarization import LinearWeeklySummaryWorkflow
 
 EXAMPLE_WORKFLOWS = [
     InsuranceClaimsTriageWorkflow,
@@ -22,6 +23,7 @@ EXAMPLE_WORKFLOWS = [
     DangerousGoodsValidationWorkflow,
     CodeModernizationWorkflow,
     ModernizeFileWorkflow,
+    LinearWeeklySummaryWorkflow,
 ]
 
 
