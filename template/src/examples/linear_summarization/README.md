@@ -16,6 +16,34 @@ The Linear Weekly Summary workflow automates the process of generating concise, 
 
 > **Model**: All LLM calls use `mistral-chat-latest`.
 
+## Prerequisites
+
+This workflow uses the Linear Connector with [on-behalf-of (OBO)](https://docs.mistral.ai/studio-api/workflows/building-workflows/on_behalf_of) mode, which requires a [hardened deployment](https://docs.mistral.ai/studio-api/workflows/managing-workflows-in-production/hardened_deployments). Complete these steps before running the workflow.
+
+### 1. Create the Linear Connector
+
+1. Open [Studio › Context › Connectors](https://console.mistral.ai/build/connectors).
+2. Click **+ Add connector** and select **Linear**.
+3. Give it a name (e.g. `linear`) — this must match the connector name referenced in the workflow code.
+
+### 2. Add your Linear credentials
+
+1. Open the connector you just created and switch to the **Credentials** tab.
+2. Click **+ Add credentials**, give it a name, and follow the auth flow.
+3. Mark it as the default credential so it is used automatically when no specific credential name is provided.
+
+> **Tip**: You can also manage credentials programmatically via `client.beta.connectors`. See the [credentials docs](https://docs.mistral.ai/studio-api/workflows/building-workflows/connectors#credentials) for details.
+
+### 3. Set up a hardened deployment
+
+OBO workflows cannot be registered in a non-hardened deployment. Follow these steps to harden your deployment:
+
+1. **Bootstrap the deployment**: Start the examples worker once with a non-OBO placeholder (or any existing workflow) to create the deployment entry on the platform.
+2. **Harden the deployment**: In the Mistral Console, go to **Settings › Hardened Deployments**, find your deployment, and associate your API key with it.
+3. **Re-register the OBO workflow**: Start the examples worker again — now the Linear summary workflow (which uses `on_behalf_of=True`) can register successfully.
+
+> For full details on managing hardened deployments, see the [hardened deployments docs](https://docs.mistral.ai/studio-api/workflows/managing-workflows-in-production/hardened_deployments).
+
 ## How to run
 
 ### 1. Start the examples worker
