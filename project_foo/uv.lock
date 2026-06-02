@@ -564,7 +564,7 @@ wheels = [
 [[package]]
 name = "local-lib"
 version = "0.1.0"
-source = { editable = "local_lib" }
+source = { editable = "../local_lib" }
 
 [[package]]
 name = "mcp"
@@ -1466,7 +1466,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "local-lib", editable = "local_lib" },
+    { name = "local-lib", editable = "../local_lib" },
     { name = "mistralai-workflows", extras = ["mistralai"], specifier = ">=3.0.0,<4" },
     { name = "pydantic" },
     { name = "python-dotenv" },
