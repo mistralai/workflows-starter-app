@@ -19,9 +19,6 @@ dev = [
     "mistralai-workflows-plugins-webhook",
 ]
 
-[tool.uv]
-exclude-newer = "7 days"
-exclude-newer-package = { mistralai = false, mistralai-workflows = false, mistralai-workflows-plugins-webhook=false }
 
 [tool.uv.sources]
 mistralai-workflows-plugins-webhook = { index = "gemfury" }
