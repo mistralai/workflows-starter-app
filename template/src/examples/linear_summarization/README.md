@@ -60,7 +60,7 @@ make execute-linear-summary
 
 This workflow expects a team name or ID and team project or ID as input.
 When no input is provided, the workflow pauses and waits for user input.
-You can interactively answer the prompts in [AI Studio](https://console.mistral.ai/build/workflows/linear-weekly-summary).
+You can interactively answer the prompts in [Studio](https://console.mistral.ai/build/workflows/linear-weekly-summary).
 
 Alternatively, you can provide input via the command line:
 
