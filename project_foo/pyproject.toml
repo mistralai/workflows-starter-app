@@ -21,9 +21,6 @@ dev = [
 [tool.uv.sources]
 local_lib = { path = "../local_lib", editable = true }
 
-[tool.uv]
-exclude-newer = "7 days"
-
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
