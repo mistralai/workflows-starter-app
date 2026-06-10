@@ -15,10 +15,21 @@ dev = [
     "mypy>=1.15",
     "pytest>=8.0",
     "watchdog>=4.0",
+    "mistralai-workflows[mistralai]>=3.5",
+    "mistralai-workflows-plugins-webhook",
 ]
 
 [tool.uv]
 exclude-newer = "7 days"
+exclude-newer-package = { mistralai = false, mistralai-workflows = false, mistralai-workflows-plugins-webhook=false }
+
+[tool.uv.sources]
+mistralai-workflows-plugins-webhook = { index = "gemfury" }
+
+[[tool.uv.index]]
+name = "gemfury"
+url = "https://pypi.fury.io/mistralai/"
+explicit = true
 
 [build-system]
 requires = ["hatchling"]
