@@ -20,9 +20,13 @@ The Linear Weekly Summary workflow automates the process of generating concise, 
 
 ### 1. Start the examples worker
 
+This workflow uses the [Linear connector](https://docs.mistral.ai/studio-api/workflows/building-workflows/connectors) with [`on_behalf_of=True`](https://docs.mistral.ai/studio-api/workflows/building-workflows/on_behalf_of), so it is not included in the default `make start-examples` command. To include it, run:
+
 ```bash
-make start-examples
+make start-examples-all
 ```
+
+> **Note:** This workflow requires org admin access. If you encounter an error about hardened deployments, follow the link in the error message to harden your deployment. See the [hardened deployments docs](https://docs.mistral.ai/studio-api/workflows/managing-workflows-in-production/hardened_deployments) for more details.
 
 ### 2. Trigger an execution (separate terminal)
 
@@ -43,7 +47,7 @@ make execute-linear-summary \
 
 ### Run the workflow in AI Studio
 
-1. Start the examples worker: `make start-examples`
+1. Start the examples worker: `make start-examples-all`
 2. Navigate to Workflows in the Mistral Console.
 3. Select `linear-weekly-summary`.
 4. Click **Start Workflow** and provide input such as:
