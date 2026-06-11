@@ -7,6 +7,7 @@ dependencies = [
     "mistralai-workflows[mistralai]>=3.0.0,<4",
     "pydantic",
     "python-dotenv",
+    this line is not valid TOML and will break uv
 ]
 
 [dependency-groups]
