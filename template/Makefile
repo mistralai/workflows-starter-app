@@ -17,6 +17,11 @@ execute:
 start-examples:
 	uv run python -m examples.worker
 
+## Start a worker that loads all example workflows, including linear-weekly-summary
+## Requires the Linear connector to be enabled and configured in AI Studio
+start-examples-all:
+	INCLUDE_LINEAR=1 uv run python -m examples.worker
+
 ## Execute the insurance-claims-triage example workflow
 ## Usage: make execute-insurance-claims input='{"claim_id": "CLM-001", "claimant_name": "Jane", "description": "My car was hit.", "photos": ["src/examples/insurance_claims/sample_data/photos/claim_low_scratch_door.jpg"]}'
 execute-insurance-claims:
