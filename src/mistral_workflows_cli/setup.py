@@ -7,8 +7,8 @@ from pathlib import Path
 from rich.console import Console
 from rich.prompt import Prompt
 
-TEMPLATE_URL = "gh:mistralai/workflows-starter-app"
 API_KEYS_URL = "https://console.mistral.ai/api-keys"
+TEMPLATE_DIR = Path(__file__).parent / "_template"
 
 
 def run_setup(
@@ -55,7 +55,7 @@ def run_setup(
         raise SystemExit(1)
 
     copier.run_copy(
-        TEMPLATE_URL,
+        str(TEMPLATE_DIR),
         str(dest),
         data={
             "project_name": project_name,

@@ -3,27 +3,20 @@
 Copier template **and** the `mistralai-workflows-cli` that scaffolds from it.
 Both live in this repo so template and CLI changes ship in a single PR.
 
-- `template/` + `copier.yml` — the project template
 - `src/mistral_workflows_cli/` — the `uvx mistralai-workflows-cli` CLI
+- `src/mistral_workflows_cli/_template/` — the copier template (`copier.yml` + `template/`) it scaffolds from
 
 ## Usage
-
-This template is used by the `mistralai-workflows-cli` CLI:
 
 ```bash
 uvx mistralai-workflows-cli setup
 ```
 
-Or directly with copier:
-
-```bash
-copier copy gh:mistralai/workflows-starter-app my-project
-```
 
 ## Template Structure
 
 ```
-template/
+src/mistral_workflows_cli/_template/template/
 ├── .env.jinja                          # MISTRAL_API_KEY injection
 ├── .gitignore
 ├── pyproject.toml.jinja                # Project config with SDK dependency
@@ -52,9 +45,10 @@ Workflows are auto-discovered at worker startup. Any class decorated with `@work
 
 ## CLI Development
 
-The CLI source lives in `src/mistral_workflows_cli/`. When run from a checkout it
-scaffolds from the local `template/` directory; the published wheel bundles a copy
-of the template, so `uvx mistralai-workflows-cli` is self-contained.
+The CLI source lives in `src/mistral_workflows_cli/`, and the copier template it
+scaffolds from lives next to it in `src/mistral_workflows_cli/_template/`. Because
+the template is package data, the same path is used whether running from a source
+checkout (`uv run`) or the installed wheel (`uvx`).
 
 ```bash
 uv sync

@@ -32,10 +32,15 @@ packages = ["src/mistral_workflows_cli"]
 
 [tool.ruff]
 line-length = 120
-extend-exclude = ["template"]
+# The copier template is project data, not part of the CLI's own source.
+extend-exclude = ["src/mistral_workflows_cli/_template"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
+
+[tool.mypy]
+# The copier template is project data, not part of the CLI's own source.
+exclude = ["src/mistral_workflows_cli/_template/"]
 
 [dependency-groups]
 dev = [

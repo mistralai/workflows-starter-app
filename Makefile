@@ -23,10 +23,11 @@ installdeps:
 clean:
 	rm -rf dist/ build/ *.egg-info
 
-## Generate a project from the template and run integration tests
+## Generate a project via the CLI and run integration tests
 integration-test:
 	rm -rf $(GENERATED_PROJECT)
-	copier copy --defaults --UNSAFE --vcs-ref=HEAD . $(GENERATED_PROJECT)
+	uv run mistral-workflows setup --api-key sk-test \
+		-o $(dir $(GENERATED_PROJECT)) -n $(notdir $(GENERATED_PROJECT))
 	$(MAKE) _test-uv-lock-generated
 	$(MAKE) _test-discover
 	$(MAKE) _test-start-worker
