@@ -18,4 +18,9 @@ mistral_api_key:
 deployment_name:
   type: str
   default: "default"
-  help: "Deployment name (used to identify the deployment in AI Studio)"
+  help: "Deployment name base (typically the machine hostname); combined with the project name and a random suffix to isolate deployments"
+
+deployment_suffix:
+  type: str
+  when: false
+  default: "{% set chars = 'abcdefghijklmnopqrstuvwxyz0123456789' %}{{ chars|random }}{{ chars|random }}{{ chars|random }}{{ chars|random }}"
