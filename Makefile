@@ -1,6 +1,27 @@
-.PHONY: integration-test
+.PHONY: integration-test lint format typecheck test installdeps clean
 
 GENERATED_PROJECT := /tmp/starter-app-integration-test
+
+## CLI (mistralai-workflows-cli) development targets
+lint:
+	uv run ruff check .
+	uv run ruff format --check .
+
+format:
+	uv run ruff format .
+	uv run ruff check --fix .
+
+typecheck:
+	uv run mypy src/
+
+test:
+	uv run pytest
+
+installdeps:
+	uv sync
+
+clean:
+	rm -rf dist/ build/ *.egg-info
 
 ## Generate a project from the template and run integration tests
 integration-test:

@@ -1,0 +1,45 @@
+[project]
+name = "mistralai-workflows-cli"
+dynamic = ["version"]
+description = "CLI to bootstrap Mistral Workflows projects"
+requires-python = ">=3.10"
+dependencies = [
+    "click>=8.0",
+    "copier>=9.0",
+    "rich>=13.0",
+]
+
+[project.scripts]
+mistral-workflows = "mistral_workflows_cli.main:cli"
+mistralai-workflows-cli = "mistral_workflows_cli.main:cli"
+
+[tool.uv]
+exclude-newer = "7 days"
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+vcs = "git"
+pattern-prefix = "mistralai-workflows-cli/"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mistral_workflows_cli"]
+
+[tool.ruff]
+line-length = 120
+extend-exclude = ["template"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.11",
+    "mypy>=1.15",
+    "pytest>=8.0",
+]

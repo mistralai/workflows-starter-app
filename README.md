@@ -1,6 +1,10 @@
 # workflows-starter-app
 
-Copier template for bootstrapping Mistral Workflows projects.
+Copier template **and** the `mistralai-workflows-cli` that scaffolds from it.
+Both live in this repo so template and CLI changes ship in a single PR.
+
+- `template/` + `copier.yml` — the project template
+- `src/mistral_workflows_cli/` — the `uvx mistralai-workflows-cli` CLI
 
 ## Usage
 
@@ -44,3 +48,25 @@ Workflows are auto-discovered at worker startup. Any class decorated with `@work
 | ----------------- | ------------------------------------------------------------ |
 | `project_name`    | Name of the project (used in pyproject.toml, workflow names) |
 | `mistral_api_key` | Mistral API key (written to `.env`, excluded from git)       |
+| `deployment_name` | Deployment name used to identify the deployment in AI Studio |
+
+## CLI Development
+
+The CLI source lives in `src/mistral_workflows_cli/`. When run from a checkout it
+scaffolds from the local `template/` directory; the published wheel bundles a copy
+of the template, so `uvx mistralai-workflows-cli` is self-contained.
+
+```bash
+uv sync
+uv run mistral-workflows --help
+make test
+```
+
+## Publishing
+
+Tag with `mistralai-workflows-cli/v<version>` to trigger the PyPI publish workflow.
+
+```bash
+git tag mistralai-workflows-cli/v0.1.0
+git push origin mistralai-workflows-cli/v0.1.0
+```
