@@ -333,6 +333,7 @@ A full example combining activities, handoffs and workflow orchestration:
 import asyncio
 import mistralai
 import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
 
 @workflows.activity()
 async def calculate_risk_score(deal_type: str, amount: float) -> dict:

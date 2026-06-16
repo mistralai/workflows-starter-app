@@ -13,24 +13,24 @@ sidebar_position: 4
 - Hybrid cloud strategies
 
 ## 1. Remote Fully (Production)
-- **Components**: Temporal + Workflows API + Workers all on Kubernetes
+- **Components**: Workflows control plane (engine + API) + Workers all on Kubernetes
 - **Helm charts**: mistral-temporal, mistralai-workflows, mistralai-workflows-worker
 - **Use case**: Production deployments, full observability, auto-scaling
 - **Benefits**: High availability, resource isolation, operational visibility
 
 ## 2. Hybrid (Development/Testing)
-- **Components**: Temporal + Workflows API on Kubernetes, Workers local/elsewhere
+- **Components**: Workflows control plane (engine + API) on Kubernetes, Workers local/elsewhere
 - **Use case**: Development against production data, distributed teams
 - **Benefits**: Local debugging, production-like environment, flexible scaling
 
 ## 3. Local Passthru (Development)
-- **Components**: Direct activity execution without Temporal orchestration
-- **Implementation**: Activities detect `not temporalio.workflow.in_workflow()` and execute directly
+- **Components**: Direct activity execution without the orchestration engine
+- **Implementation**: Activities detect that they are running outside a workflow and execute directly
 - **Use case**: Fast iteration, debugging, unit testing
 - **Benefits**: No infrastructure overhead, immediate execution, debugging-friendly
 
-## 4. Local with Temporal (Development)
-- **Components**: `temporal server start-dev` + local API + local workers
+## 4. Full Local Stack (Development)
+- **Components**: Local execution engine + local API + local workers
 - **Use case**: Full-stack local development, integration testing
 - **Benefits**: Complete workflow testing, offline development, learning
 
@@ -58,7 +58,7 @@ sidebar_position: 4
 
 ### Prerequisites and Installation
 - uv and Python environment setup
-- Temporal server installation
+- Local execution engine setup
 - Development configuration
 
 ### Switching Between Patterns
@@ -75,4 +75,3 @@ sidebar_position: 4
 
 ## Next Steps
 - [Observability](observability) - Monitor your deployments
-- [Configuration Reference](../appendices/configuration-reference) - All config options

@@ -81,7 +81,7 @@ async with event_stream:
             break
         else:
             # Handle your custom events
-            record_event(event)
+            handle_custom_event(event)
 ```
 
 ### Resume from Sequence
@@ -398,4 +398,3 @@ async with event_stream:
 ## Next Steps
 
 - [Publishing Events](streaming) - How to publish from workflows/activities
-- [Streaming Architecture](../appendices/streaming) - Technical implementation details

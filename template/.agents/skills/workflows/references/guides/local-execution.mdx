@@ -151,7 +151,7 @@ Local execution cannot replicate distributed capabilities:
 
 ## How It Works
 
-The SDK detects execution context via `temporalio.workflow.in_workflow()`. Outside a workflow context, activities and workflows execute as regular Python async functions with retry wrappers.
+The SDK automatically detects whether code is running inside a workflow context. Outside a workflow context, activities and workflows execute as regular Python async functions with retry wrappers.
 
 ```python
 import mistralai.workflows as workflows

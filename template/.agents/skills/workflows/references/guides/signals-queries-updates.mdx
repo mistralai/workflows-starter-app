@@ -24,7 +24,7 @@ Signals allow external systems to send messages to running workflows.
 ```python
 import mistralai.workflows as workflows
 
-@workflows.workflow.define()
+@workflows.workflow.define(name="notification_workflow")
 class NotificationWorkflow:
     def __init__(self):
         self.notifications = []
@@ -59,7 +59,7 @@ Queries allow external systems to get the current state of a workflow.
 ```python
 import mistralai.workflows as workflows
 
-@workflows.workflow.define()
+@workflows.workflow.define(name="processing_workflow")
 class ProcessingWorkflow:
     def __init__(self):
         self.progress = 0.0
@@ -106,7 +106,7 @@ async def process_update_data(data: str) -> str:
     await asyncio.sleep(0.5)
     return f"Processed: {data.upper()}"
 
-@workflows.workflow.define()
+@workflows.workflow.define(name="data_processing_workflow")
 class DataProcessingWorkflow:
     def __init__(self):
         self.current_value = "default"

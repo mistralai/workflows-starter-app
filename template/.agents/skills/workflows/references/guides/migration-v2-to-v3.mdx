@@ -1,4 +1,10 @@
-# Migrating from v2.0 to v3.0
+---
+id: migration-v2-to-v3
+title: Migrating from v2 to v3
+sidebar_position: 30
+---
+
+# Migrating from v2 to v3 (through v3.4.0)
 
 ## Package Namespace Migration
 
@@ -63,7 +69,7 @@ await execute_workflow(MyChildWorkflow, params, execution_timeout=timedelta(hour
 
 ## Determinism Enforcement Enabled by Default
 
-The Temporal sandbox is now enabled by default to catch non-deterministic workflow code (e.g., using `datetime.now()`, `random`, or unrestricted imports in workflow methods).
+The determinism sandbox is now enabled by default to catch non-deterministic workflow code (e.g., using `datetime.now()`, `random`, or unrestricted imports in workflow methods).
 
 If your workflows are not yet determinism-safe, you can disable enforcement:
 
@@ -77,7 +83,7 @@ If your workflows are not yet determinism-safe, you can disable enforcement:
 DEFAULT_ENFORCE_DETERMINISM=0
 ```
 
-For workflows that need to opt out of the sandbox for specific imports, use the re-exported Temporal utilities on `workflow.unsafe`:
+For workflows that need to opt out of the sandbox for specific imports, use the sandbox utilities on `workflow.unsafe`:
 ```python
 from mistralai.workflows import workflow
 
@@ -103,9 +109,9 @@ The `WorkflowVersion` model has been renamed to `WorkflowRegistration` across th
 
 ## Deployment-Based Task Queue Routing
 
-Workers now use `DEPLOYMENT_NAME` as the Temporal task queue name. The old `TEMPORAL_TASK_QUEUE` environment variable is kept for backwards compatibility but raises an error if it conflicts with `DEPLOYMENT_NAME`.
+Workers now use `DEPLOYMENT_NAME` as the task queue name. The old `TEMPORAL_TASK_QUEUE` environment variable is kept for backwards compatibility but raises an error if it conflicts with `DEPLOYMENT_NAME`.
 
-**Versioned workers** (with `deployment_name` and `build_id`) are forbidden from using the `default` task queue to prevent Temporal versioning conflicts.
+**Versioned workers** (with `deployment_name` and `build_id`) are forbidden from using the `default` task queue to prevent worker versioning conflicts.
 
 ---
 
@@ -210,4 +216,50 @@ async for event in stream_workflow_events(mistral_client, execution_id=exec_id):
 | `client.execute_workflow_and_wait(...)` | `mistral_client.workflows.execute_workflow_and_wait_async(...)` |
 | `client.schedule_workflow(...)` | `mistral_client.workflows.schedule_workflow_async(...)` |
 | `client.stream_events(...)` | `stream_workflow_events(mistral_client, ...)` |
+
+---
+
+## Changes in v3.1 through v3.4
+
+These releases are backward-compatible with v3.0 but add capabilities you should adopt.
+
+### SDK-native helpers (never import `temporalio`)
+
+Use the SDK wrappers instead of importing `temporalio` in workflow or activity code:
+
+| Use this | Instead of |
+|----------|------------|
+| `workflow.now()` | `datetime.now()` |
+| `workflow.uuid4()` | `uuid.uuid4()` |
+| `workflow.random()` | `random` |
+| `from mistralai.workflows import activity_heartbeat` | `temporalio.activity.heartbeat` |
+| `workflow.unsafe.imports_passed_through()` / `workflow.unsafe.skip_determinism_enforcement()` | `temporalio.workflow.unsafe.*` |
+| `from mistralai.workflows import WorkflowError, ActivityError` | `temporalio.exceptions.*` |
+
+### Fire-and-forget child workflows
+
+`execute_workflow(..., wait=False)` starts a child without blocking and returns a handle you can await later. Control the parent/child relationship with `ParentClosePolicy` (imported from `mistralai.workflows`):
+
+```python
+from mistralai.workflows import workflow, ParentClosePolicy
+
+handle = await workflow.execute_workflow(
+    ChildWorkflow,
+    params=child_params,
+    wait=False,
+    parent_close_policy=ParentClosePolicy.ABANDON,
+)
+```
+
+### Primitive and multi-parameter activity inputs
+
+`execute_activities_in_parallel` accepts primitive and multi-parameter activity inputs, with up-front input validation.
+
+### `is_technical` workflows
+
+`@workflow.define(..., is_technical=True)` marks internal/technical workflows so they are hidden from end-user-facing surfaces.
+
+### Diagnostics CLI
+
+`wf-diagnose` prints a self-contained diagnostic report (versions, config, plugins, connectivity) for support triage. See [Diagnostics](diagnostics).
 

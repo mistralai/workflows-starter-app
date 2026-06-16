@@ -22,30 +22,30 @@ A workflow is a durable, deterministic process that orchestrates activities and 
 ## Workflow Determinism
 
 Workflows must be **deterministic**: given the same inputs, they must always produce the same
-sequence of commands. This is a fundamental requirement of Temporal's replay mechanism:
-when a worker restarts or a workflow is recovered, Temporal re-executes the workflow code
+sequence of commands. This is a fundamental requirement of the platform's replay mechanism:
+when a worker restarts or a workflow is recovered, the platform re-executes the workflow code
 from the beginning, matching each command against the recorded event history.
 If the code produces different commands on replay, the workflow fails with a non-determinism error.
 
 :::note
-Determinism is **enforced by default**. Workflow code runs inside Temporal's Python sandbox, which intercepts non-deterministic calls and raises errors at runtime. You can opt out per-workflow with `enforce_determinism=False` or worker-wide with `DEFAULT_ENFORCE_DETERMINISM=0`. See [Determinism Enforcement](#determinism-enforcement-sandbox) below for details.
+Determinism is **enforced by default**. Workflow code runs inside the SDK's determinism sandbox, which intercepts non-deterministic calls and raises errors at runtime. You can opt out per-workflow with `enforce_determinism=False` or worker-wide with `DEFAULT_ENFORCE_DETERMINISM=0`. See [Determinism Enforcement](#determinism-enforcement-sandbox) below for details.
 :::
 
-### Correct: Use Temporal's Deterministic APIs
+### Correct: Use the SDK's Deterministic APIs
 
 Always use these in workflow code:
 
 ```python
-from temporalio import workflow as temporal_wf
+from mistralai.workflows import workflow
 
 ## ✅ Correct - Use workflow.now() for current time
-current_time = temporal_wf.now()
+current_time = workflow.now()
 
 ## ✅ Correct - Use workflow.uuid4() for UUIDs
-request_id = temporal_wf.uuid4()
+request_id = workflow.uuid4()
 
 ## ✅ Correct - Use workflow.random() for random values
-random_value = temporal_wf.random()
+random_value = workflow.random()
 ```
 
 ### Dangerous: Standard Library Equivalents
@@ -53,15 +53,15 @@ random_value = temporal_wf.random()
 Don't use these directly in workflow code:
 
 ```python
-## ❌ Dangerous - use temporalio.workflow.now() instead
+## ❌ Dangerous - use workflow.now() instead
 from datetime import datetime
 current_time = datetime.now()
 
-## ❌ Dangerous - use temporalio.workflow.uuid4() instead
+## ❌ Dangerous - use workflow.uuid4() instead
 import uuid
 request_id = uuid.uuid4()
 
-## ❌ Dangerous - use temporalio.workflow.random() instead
+## ❌ Dangerous - use workflow.random() instead
 import random
 rand_val = random.random()
 ```
@@ -77,10 +77,10 @@ Also dangerous in workflows:
 For operations like external API calls, database queries, or file I/O, use activities:
 
 ```python
-from mistralai.workflows import workflow
-from temporalio import workflow as temporal_wf
+from datetime import datetime
+from mistralai.workflows import workflow, activity
 
-@workflow.activity
+@activity()
 async def fetch_external_data(params: DataParams) -> ExternalData:
     # ✅ Safe - Activities are not replayed
     response = await http_client.get(params.url)
@@ -91,18 +91,14 @@ async def fetch_external_data(params: DataParams) -> ExternalData:
 class MyWorkflow:
     @workflow.entrypoint
     async def run(self, params: MyParams) -> MyResult:
-        # ✅ Correct - Non-deterministic work in activity
-        data = await temporal_wf.execute_activity(
-            fetch_external_data,
-            params,
-            start_to_close_timeout=timedelta(seconds=30),
-        )
+        # ✅ Correct - call the activity directly; non-deterministic work runs inside it
+        data = await fetch_external_data(params)
         return MyResult(data=data)
 ```
 
 ### Determinism Enforcement (Sandbox)
 
-When determinism enforcement is enabled, your workflow code runs inside Temporal's Python sandbox. The sandbox:
+When determinism enforcement is enabled, your workflow code runs inside the SDK's determinism sandbox. The sandbox:
 
 - **Re-imports modules** in an isolated environment so that side-effectful module-level code
   is contained
@@ -115,11 +111,9 @@ rather than silently producing a non-determinism bug that surfaces only on repla
 
 :::info
 If you disable the sandbox, determinism is your responsibility. Your code will still break on replay if it's non-deterministic, you just won't get an immediate error telling you so.
-You can find more details about Temporal's sandbox [here](https://docs.temporal.io/develop/python/python-sdk-sandbox).
 :::
 
-When enabled, the SDK sets `sandboxed=True` on the underlying Temporal workflow definition.
-No custom sandbox policy is applied, the standard Temporal sandbox behavior is used as-is.
+When enabled, the SDK runs the workflow inside its determinism sandbox with the standard restrictions; no custom sandbox policy is applied.
 
 #### Disabling Per-Workflow
 
@@ -133,7 +127,7 @@ from mistralai.workflows import workflow
 class MyWorkflow:
     @workflow.entrypoint
     async def run(self, input: str) -> str:
-        # This code runs WITHOUT the Temporal sandbox.
+        # This code runs WITHOUT the determinism sandbox.
         # You are responsible for ensuring determinism.
         return f"Processed: {input}"
 ```
@@ -208,9 +202,7 @@ class MyWorkflow:
         return f"Processed: {input} with {value}"
 ```
 
-Both context managers map directly to their Temporal equivalents
-(`temporalio.workflow.unsafe.imports_passed_through()` and
-`temporalio.workflow.unsafe.sandbox_unrestricted()` respectively).
+Both context managers are exposed on `workflow.unsafe`, so you never import `temporalio` directly.
 
 #### Recommendations
 
@@ -482,6 +474,7 @@ schedule = ScheduleDefinition(
 
 @workflows.workflow.define(name="report_workflow", schedules=[schedule])
 class ReportWorkflow:
+    @workflows.workflow.entrypoint
     async def run(self, report_type: str = "daily", include_details: bool = False):
         # Generate report
         pass

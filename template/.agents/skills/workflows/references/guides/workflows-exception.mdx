@@ -27,7 +27,7 @@ from http import HTTPStatus
 raise WorkflowsException(
     code=ErrorCode.WORKFLOW_DEFINITION_ERROR,
     message=f"{workflow} class must be decorated with @workflows.workflow.define",
-    status=http.HTTPStatus.INTERNAL_SERVER_ERROR
+    status=HTTPStatus.INTERNAL_SERVER_ERROR
 )
 ```
 
@@ -130,27 +130,25 @@ The following error codes are used to identify specific errors that can occur wh
 
 ## Exception Properties and Methods
 
-### `from_temporal_error()`
+### Catching Workflow and Activity Errors
 
-Create an exception from Temporal errors:
+In user code, catch the SDK's own exception types — never import `temporalio`. Both are exported from `mistralai.workflows`:
 
 ```python
-from temporalio.exceptions import TemporalError
+from mistralai.workflows import WorkflowError, ActivityError
 
 try:
-    await client.workflows.execute_workflow_async(...)
-except TemporalError as e:
-    raise WorkflowsException.from_temporal_error(
-        temporal_error=e,
-        message_override="Failed to execute workflow",
-        status_override=HTTPStatus.SERVICE_UNAVAILABLE
-    )
+    result = await client.workflows.execute_workflow_and_wait_async(...)
+except ActivityError as e:
+    # An activity failed after exhausting its retries
+    ...
+except WorkflowError as e:
+    # The workflow itself raised an application error
+    ...
 ```
 
-Handles specific Temporal error types:
-- `RPCError` → Maps to appropriate error code based on RPC status
-- `WorkflowQueryRejectedError` → `REJECTED_QUERY_ERROR`
-- `WorkflowAlreadyStartedError` → `WORKFLOW_ALREADY_STARTED`
+- `ActivityError` wraps a failure raised inside an activity.
+- `WorkflowError` is the base class for application errors raised by workflow code.
 
 ### `from_api_client_error()`
 

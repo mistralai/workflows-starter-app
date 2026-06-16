@@ -62,7 +62,6 @@ Customize activity identification with:
 ```python
 @workflows.activity(
     name="custom_activity_name",  # Used for registration and execution
-    display_name="User-Friendly Name"     # Used in logs and observability tools
 )
 ```
 
@@ -113,7 +112,7 @@ Detect stuck activities quickly by requiring periodic heartbeat signals:
 
 ```python
 from datetime import timedelta
-from temporalio import activity as temporal_activity
+from mistralai.workflows import activity_heartbeat
 
 @workflows.activity(
     start_to_close_timeout=timedelta(minutes=30),
@@ -125,11 +124,11 @@ async def long_running_task(items: list[str]) -> dict:
         result = await process_item(item)
         results.append(result)
         # Report progress to prevent timeout
-        temporal_activity.heartbeat({"processed": i + 1, "total": len(items)})
+        activity_heartbeat({"processed": i + 1, "total": len(items)})
     return {"results": results}
 ```
 
-When `heartbeat_timeout` is set, activities must call `temporal_activity.heartbeat()` periodically. If no heartbeat is received within the timeout, Temporal considers the activity failed and triggers a retry. This enables fast detection of stuck activities without waiting for the full `start_to_close_timeout`.
+When `heartbeat_timeout` is set, activities must call `activity_heartbeat()` periodically. If no heartbeat is received within the timeout, the activity is considered failed and a retry is triggered. This enables fast detection of stuck activities without waiting for the full `start_to_close_timeout`.
 
 **Note:** Not supported for local activities.
 
@@ -181,7 +180,7 @@ In this example, if nested_activity fails, the entire parent_activity will be re
 
 ## Local Activities
 
-For performance optimization, activities can run directly in the workflow worker process instead of being scheduled through Temporal's task queue. This is useful for fast operations (< 1 second) where scheduling overhead is significant.
+For performance optimization, activities can run directly in the workflow worker process instead of being scheduled through the task queue. This is useful for fast operations (< 1 second) where scheduling overhead is significant.
 
 ### When to Use
 
@@ -243,9 +242,7 @@ class MixedWorkflow:
 
 ### Limitations
 
-### Limitations
-
-**Bypasses Temporal Scheduling:**
+**Bypasses Scheduling:**
 
 - No task queue isolation - activities share resources with workflows
 - Worker process blocking - slow local activities block the workflow worker

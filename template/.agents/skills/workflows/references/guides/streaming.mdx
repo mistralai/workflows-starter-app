@@ -67,7 +67,7 @@ async def chat_activity(messages: list) -> dict:
 Report progress during long operations:
 
 ```python
-@workflows.activity(display_name="Processing text with explicit control")
+@workflows.activity()
 async def streaming_tokens_with_progress_activity(text: str) -> dict:
     """
     Example of explicit progress tracking with Task API.
@@ -145,4 +145,3 @@ Each published event is wrapped with context:
 ## Next Steps
 
 - [Consuming Streaming Events](streaming-consumption) - Subscribe and filter events
-- [Streaming Architecture](../appendices/streaming) - Technical implementation details

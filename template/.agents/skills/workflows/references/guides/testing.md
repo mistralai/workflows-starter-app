@@ -1,3 +1,9 @@
+---
+id: testing
+title: Testing Workflows
+sidebar_position: 20
+---
+
 # Testing Workflows
 
 ## Quick-test script
@@ -23,7 +29,7 @@ The script:
 1. Discovers the workflow class in the given file
 2. Starts a real worker in-process via `run_worker(detach=True)` — worker logs stream to stderr
 3. Waits for the workflow to be registered on the Workflows API
-4. Executes the workflow via `WorkflowsClient`
+4. Executes the workflow via the `mistralai` client (`client.workflows.*`)
 5. For interactive workflows: polls `__get_pending_inputs` and submits each `--interactions` entry in order
 6. Waits for completion, prints PASSED + result JSON, or FAILED + traceback
 7. On timeout: terminates the execution via the API and shuts down the worker
@@ -94,11 +100,11 @@ async def test_my_workflow(self, temporal_env) -> None:
 
 ## Preventing hangs
 
-Temporal retries failed workflow tasks indefinitely by default. If your workflow has a bug that crashes during task processing (not activity execution), the test will hang forever.
+The engine retries failed workflow tasks indefinitely by default. If your workflow has a bug that crashes during task processing (not activity execution), the test will hang forever.
 
 Two guards prevent this:
 
-1. **`execution_timeout`** on `start_workflow()` — Temporal kills the workflow after this duration. The time-skipping test server fast-forwards retry delays, so the timeout triggers in ~1 real second.
+1. **`execution_timeout`** on `start_workflow()` — the engine kills the workflow after this duration. The time-skipping test server fast-forwards retry delays, so the timeout triggers in ~1 real second.
 
 2. **`asyncio.wait_for(handle.result(), timeout=N)`** — client-side fallback in case the execution timeout doesn't propagate cleanly.
 
@@ -137,7 +143,7 @@ The in-memory test environment doesn't have custom search attributes (e.g. `Otel
 
 ### Results are dicts, not Pydantic models
 
-Temporal returns raw dicts. Access fields directly: `result["message"]`, not `result.message`.
+The test client returns raw dicts. Access fields directly: `result["message"]`, not `result.message`.
 
 ### Don't add `_emit_*` activities manually
 

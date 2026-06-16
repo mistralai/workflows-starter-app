@@ -6,11 +6,11 @@ sidebar_position: 9
 
 # Handling Large Payloads with Offloaded Attributes in Workflows
 
-This guide explains how to use the **offloaded attribute** feature in Workflows to handle large payloads efficiently between activities, especially when dealing with Temporal's 2MB payload limit.
+This guide explains how to use the **offloaded attribute** feature in Workflows to handle large payloads efficiently between activities, especially when dealing with the 2MB payload limit.
 
 ## **Why Use Offloaded Attributes?**
 
-Temporal enforces a **2MB payload limit** for workflows and activities. To work around this, Workflows allows you to **offload large payloads** to blob storage. This ensures that your activities can handle large data without hitting Temporal's size restrictions.
+The platform enforces a **2MB payload limit** for workflows and activities. To work around this, Workflows allows you to **offload large payloads** to blob storage. This ensures that your activities can handle large data without hitting the size restrictions.
 
 Offloaded attributes is the preferred way to handle large payloads in your activities.
 Note that this differs from payload offloading which makes the payload available within the workflow itself, but is far less efficient.
@@ -46,7 +46,7 @@ See the [installation guide](../getting-started/installation#cloud-storage-provi
 :::info
 Blob storage bucket/container must have an **expiry policy** as Workflows does not automatically delete payloads.
 
-Align the expiry with your Temporal workflow retention period (default: 30 days).
+Align the expiry with your workflow retention period (default: 30 days).
 
 Blobs are prefixed by `temporal-activity-payload/<URL ENCODED NAMESPACE>`, allowing per-namespace policies.
 :::
@@ -80,7 +80,7 @@ In your activity, access the offloaded value using the `get_value()` method.
 The system handles offloading and restoration automatically:
 
 ```python
-@workflows.activity(display_name="Append string to file")
+@workflows.activity()
 async def my_activity(params: MyPayload) -> MyPayload:
     # Access the offloaded value using get_value()
     logger.info("Large field value", value=params.large_field.get_value())
@@ -97,27 +97,29 @@ async def my_activity(params: MyPayload) -> MyPayload:
 In the workflow context, **do not** access the `get_value()` method of offloaded fields. Instead, pass the `OffloadableField` object directly to the next activity:
 
 ```python
-@workflows.workflow.define(name="sub-workflow")
-def my_workflow(...):
-    # Call an activity with an offloadable field
-    activity_result = await my_activity(
-        MyPayload(
-            random_field="activity_param",
-            large_field=OffloadableField(value="initial_small_value")
+@workflows.workflow.define(name="sub_workflow")
+class SubWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self) -> None:
+        # Call an activity with an offloadable field
+        activity_result = await my_activity(
+            MyPayload(
+                random_field="activity_param",
+                large_field=OffloadableField(value="initial_small_value")
+            )
         )
-    )
 
-    # Pass the offloaded field to the next activity
-    next_activity_params = MyPayload(
-        random_field="second_activity_param",
-        # OK: Pass the OffloadableField object directly
-        large_field=activity_result.large_field
-    )
+        # Pass the offloaded field to the next activity
+        next_activity_params = MyPayload(
+            random_field="second_activity_param",
+            # OK: Pass the OffloadableField object directly
+            large_field=activity_result.large_field
+        )
 
-    # DO NOT: Try to access the value in the workflow context as it could be offloaded
-    # large_field=OffloadableField(value=activity_result.large_field.get_value())
+        # DO NOT: Try to access the value in the workflow context as it could be offloaded
+        # large_field=OffloadableField(value=activity_result.large_field.get_value())
 
-    await my_activity(next_activity_params)
+        await my_activity(next_activity_params)
 ```
 
 ## **Performance Optimization: Grouping Offloadable Fields**

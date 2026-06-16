@@ -38,7 +38,7 @@ Key characteristics:
 - Long-running (can execute for years with checkpointing)
 - Stateful coordination
 - Input/output limited to 2MB
-- **A workflow will timeout if the delay between activities is more than 2 seconds**
+- **Keep orchestration code fast**: CPU-bound logic in the workflow body (between `await` points) should stay under ~2 seconds per step — push all heavy or blocking work into activities
 
 Workflows should contain only orchestration logic - they decide what needs to happen and in what order, but never perform actual work directly.
 
@@ -80,7 +80,7 @@ async def main():
 
 When you need more throughput or want to test different code simultaneously, you can run multiple workers. Here are the common patterns:
 
-> **What is a task queue?** A task queue is a lightweight routing mechanism that determines which workers can execute which workflows and activities. Workers poll specific task queues for work, and workflows/activities are assigned to task queues when executed. [Learn more about task queues](https://docs.temporal.io/task-queue).
+> **What is a task queue?** A task queue is a lightweight routing mechanism that determines which workers can execute which workflows and activities. Workers poll specific task queues for work, and workflows/activities are assigned to task queues when executed. A worker's task queue is its `DEPLOYMENT_NAME`.
 
 ```mermaid
 graph TD
@@ -119,15 +119,15 @@ MISTRAL_API_KEY=prod_workspace_key uv run python my_workflow.py
 **Pattern 3: Testing Different Code (Same workspace)**
 
 - Same workspace (same namespace)
-- Different task queues for isolation
+- Different deployment names (task queues) for isolation
 - Use case: Testing changes without affecting running workers
 
 ```bash
 ## Stable version
-MISTRAL_API_KEY=workspace_key uv run python my_workflow.py
+DEPLOYMENT_NAME=my-workflow MISTRAL_API_KEY=workspace_key uv run python my_workflow.py
 
 ## Testing changes
-TEMPORAL_TASK_QUEUE=testing MISTRAL_API_KEY=workspace_key uv run python my_workflow_v2.py
+DEPLOYMENT_NAME=my-workflow-testing MISTRAL_API_KEY=workspace_key uv run python my_workflow_v2.py
 ```
 
 :::danger Critical: Avoid Worker Conflicts
@@ -145,8 +145,8 @@ Workers using the same API key share the same namespace
 **How to avoid conflicts:**
 
 - For different environments → Use separate workspaces (different namespaces)
-- For testing changes → Use different task queues on the same workspace
-- For scaling → Use same workspace, same task queue, same code
+- For testing changes → Use different deployment names (task queues) on the same workspace
+- For scaling → Use same workspace, same deployment name, same code
 
 :::
 
@@ -182,7 +182,7 @@ A **Run** is a single attempt within an execution. When a workflow is reset or r
 
 - **1 Execution = 1+ Runs**: An execution can have multiple runs over its lifetime
 - **Only 1 active run at a time**: For any execution, only one run can be active (RUNNING) at any moment
-- **Action endpoints target latest run**: This is Temporal's default behavior and ensures you always interact with the current state
+- **Action endpoints target latest run**: This ensures you always interact with the current state
 
 ### API Endpoints
 
