@@ -16,12 +16,12 @@ Mistral Workflows provides a powerful concurrency framework that enables you to 
 - **Chain Executor**: Process items sequentially from a stream/queue (token-based pagination)
 - **Offset Pagination Executor**: Process items by fetching pages/chunks by index
 
-All patterns are built on Temporal's workflow continuation patterns, providing automatic fault tolerance, progress tracking, and scalability for large datasets.
+All patterns are built on the platform's workflow continuation primitives, providing automatic fault tolerance, progress tracking, and scalability for large datasets.
 
 ### Key Benefits
 
 - **Massive Parallelism**: Execute thousands of activities concurrently
-- **Automatic Continue-As-New**: Handle large datasets without hitting Temporal's execution history limits
+- **Automatic Continue-As-New**: Handle large datasets without hitting the execution history limits
 - **Type Safety**: Comprehensive type validation for all inputs and outputs
 - **Fault Tolerance**: Built-in error handling and retry mechanisms
 - **Progress Tracking**: Monitor execution progress through built-in observability features
@@ -231,7 +231,7 @@ The Offset Pagination Executor uses two key parameters:
 
 - **Group size impacts memory usage**: Larger groups consume more memory per activity
 - **Concurrency impacts resource contention**: Higher concurrency may lead to resource exhaustion
-- **Temporal limits**: Remember Temporal's 2MB input/output limit per activity
+- **Payload limits**: Remember the 2MB input/output limit per activity
 
 ## Advanced Features
 
@@ -241,7 +241,7 @@ The concurrency framework automatically handles:
 
 - Activity failures with retry mechanisms
 - Type validation errors
-- Temporal workflow continuation for large datasets
+- Workflow continuation for large datasets
 - Progress tracking and state management
 
 ### Performance Optimization
@@ -370,7 +370,7 @@ results = await workflows.execute_activities_in_parallel(
 ### Memory Usage
 
 - Large datasets are processed efficiently to avoid memory issues
-- Temporal's continue-as-new mechanism ensures workflow state remains manageable
+- The continue-as-new mechanism ensures workflow state remains manageable
 - Each activity execution is isolated with its own memory footprint
 
 ### Network I/O Optimization
@@ -386,7 +386,7 @@ results = await workflows.execute_activities_in_parallel(
 
 ### Monitoring and Alerting
 
-- Implement custom event recording with `workflows.record_event()`
+- Track progress with the observable `task()` / `task_from()` context managers
 - Set up alerts for long-running or failed executions
 
 ## Troubleshooting
@@ -414,7 +414,7 @@ results = await workflows.execute_activities_in_parallel(
 **Solution**: If you encounter memory issues:
 
 - Reduce `max_concurrent_executions_per_worker` to process fewer items together
-- Ensure individual items are not too large (remember Temporal's 2MB limit)
+- Ensure individual items are not too large (remember the 2MB limit)
 - Monitor memory usage and adjust group sizes accordingly
 
 ### Debugging Tips
@@ -431,7 +431,7 @@ results = await workflows.execute_activities_in_parallel(
 - [Workflows Guide](workflows) - Learn how to orchestrate activities
 - [Activities Guide](activities) - Understand activity implementation details
 - [Observability Guide](observability) - Monitor and trace your concurrent executions
-- [Limitations Guide](limitations) - Understand Temporal's execution constraints
+- [Limitations Guide](limitations) - Understand the platform's execution constraints
 
 ## API Reference
 

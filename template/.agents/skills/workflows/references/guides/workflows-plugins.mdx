@@ -66,14 +66,16 @@ from mistralai.workflows.plugins.mistralai import (
     mistralai_chat_complete,
 )
 
-@workflow()
-async def summarize(text: str) -> str:
-    request = ChatCompletionRequest(
-        model="mistral-large-latest",
-        messages=[UserMessage(content=f"Summarize this text:\n\n{text}")],
-    )
-    result = await mistralai_chat_complete(request)
-    return result.choices[0].message.content
+@workflow.define(name="summarize")
+class SummarizeWorkflow:
+    @workflow.entrypoint
+    async def run(self, text: str) -> str:
+        request = ChatCompletionRequest(
+            model="mistral-large-latest",
+            messages=[UserMessage(content=f"Summarize this text:\n\n{text}")],
+        )
+        result = await mistralai_chat_complete(request)
+        return result.choices[0].message.content
 ```
 
 For full documentation on `Agent`, `Runner`, sessions, MCP, and multi-agent handoffs, see the [Durable Agents guide](./durable-agents).
@@ -123,23 +125,18 @@ class MyWebhookRouter(HTTPRouterWorkflow):
 
 **Package:** `mistralai-workflows-plugins-nuage`
 
-Orchestrates AI coding agents inside sandboxed containers. Powers Le Chat's Vibe coding feature — running an agentic loop where an LLM reasons, invokes tools, and executes code in isolation.
+Orchestrates AI coding agents inside sandboxed containers. Powers Vibe's coding feature — running an agentic loop where an LLM reasons, invokes tools, and executes code in isolation.
 
-Key capabilities: sandboxed code execution (Demiurge), GitHub integration, and Le Chat streaming.
-
-See the [Nuage Plugin guide](./nuage-plugin) for full documentation, installation instructions, and configuration reference.
+Key capabilities: sandboxed code execution, GitHub integration, and Vibe streaming.
 
 ## Installation
 
 Install the plugins you need alongside the main SDK:
 
 ```bash
-pip install mistralai-workflows
-pip install mistralai-workflows-plugins-mistralai
-pip install mistralai-workflows-plugins-webhook
+uv add "mistralai-workflows[mistralai]"   # Mistral AI plugin (agents, tools, sessions, MCP)
+uv add "mistralai-workflows[webhook]"     # Webhook / HTTP plugin
 ```
-
-See the [Nuage Plugin guide](./nuage-plugin) for installation instructions.
 
 ## Creating Your Own Reusable Libraries
 
@@ -174,7 +171,7 @@ build-backend = "hatchling.build"
 name = "acme-workflows"
 version = "0.1.0"
 dependencies = [
-    "mistralai-workflows>=2.0.0",
+    "mistralai-workflows>=3.4.0,<4.0.0",
 ]
 ```
 

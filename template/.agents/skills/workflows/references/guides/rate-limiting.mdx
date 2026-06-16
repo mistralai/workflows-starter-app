@@ -28,7 +28,8 @@ When **a key is provided**, multiple different activities that use the same key 
 
 ```python
 import mistralai.workflows as workflows
-from mistralai import Mistral, Messages, Depends
+from mistralai import Mistral, Messages
+from mistralai.workflows import Depends
 from pydantic import BaseModel
 
 def get_mistral_client() -> Mistral:

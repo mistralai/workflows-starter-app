@@ -61,7 +61,7 @@ from pydantic import BaseModel
 class InputData(BaseModel):
     name: str
 
-result = await client.workflows.execute_workflow_async(
+result = await client.workflows.execute_workflow_and_wait_async(
     workflow_identifier="simple_example_workflow",
     input=InputData(name="MyName").model_dump(mode="json"),
 )

@@ -146,7 +146,7 @@ must be performed in activities. While activities themselves can produce differe
 
 ### Maximum Execution History
 
-The execution history for each workflow is capped at 51,200 events or 50MB per workflow execution. This limit is again due to temporal's current constraints. In order to avoid hitting this limit, we recommend using `workflows.execute_activities_in_parallel`, that allows you to execute large amounts of activities in parallel, while having the lowest footprint on the execution history. [Learn more about concurrency patterns](concurrency).
+The execution history for each workflow is capped at 51,200 events or 50MB per workflow execution. This is a hard limit of the durable execution engine. In order to avoid hitting this limit, we recommend using `workflows.execute_activities_in_parallel`, that allows you to execute large amounts of activities in parallel, while having the lowest footprint on the execution history. [Learn more about concurrency patterns](concurrency).
 
 ## Activity Limitations
 
@@ -250,6 +250,6 @@ async def long_running_process(params: ProcessParams) -> ProcessResult:
 
 ## Additional Considerations
 
-Most limitations stem from Temporal's underlying architecture. For comprehensive details, refer to the [official Temporal documentation](https://docs.temporal.io/workflow-execution/limits).
+Most limitations stem from the durable execution model: workflow code must be deterministic and replayable, and execution history is bounded in size. Keep orchestration logic lightweight and push all heavy work into activities.
 
 When designing workflows, remember that workflow code is replayed during recovery, so keep logic simple and deterministic, while moving complex operations and all I/O to activities.

@@ -124,7 +124,7 @@ def test_all_workflow_decorated_classes_are_registered(mocker: MockerFixture) ->
 
 ## Unit Testing with `create_test_worker`
 
-The SDK provides `create_test_worker` in `mistralai.workflows.testing` for running workflows against an in-memory Temporal environment. It handles DI scoping, sandbox setup, and pre-registers event-emitting activities.
+The SDK provides `create_test_worker` in `mistralai.workflows.testing` for running workflows against an in-memory test environment. It handles DI scoping, sandbox setup, and pre-registers event-emitting activities.
 
 ### Fixtures
 
@@ -135,7 +135,7 @@ Import the SDK fixtures in your `conftest.py`:
 from mistralai.workflows.testing.fixtures import *  # noqa: F401,F403
 ```
 
-This provides `temporal_env` (in-memory Temporal with time-skipping) and auto-use fixtures for test config, DI cache clearing, and search attribute mocking.
+This provides `temporal_env` (in-memory test environment with time-skipping) and auto-use fixtures for test config, DI cache clearing, and search attribute mocking.
 
 ### Example
 

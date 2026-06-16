@@ -28,8 +28,9 @@ schedule = ScheduleDefinition(
     cron_expressions=["0 0 * * *"]  # Daily at midnight UTC
 )
 
-@workflows.workflow.define(schedules=[schedule])
+@workflows.workflow.define(name="report_workflow", schedules=[schedule])
 class ReportWorkflow:
+    @workflows.workflow.entrypoint
     async def run(self, report_type: str = "daily"):
         # Generate report
         pass
@@ -54,14 +55,15 @@ schedule = ScheduleDefinition(
     policy=schedule_policy
 )
 
-@workflows.workflow.define(schedules=[schedule])
+@workflows.workflow.define(name="report_workflow", schedules=[schedule])
 class ReportWorkflow:
+    @workflows.workflow.entrypoint
     async def run(self, report_type: str = "daily"):
         # Generate report
         pass
 ```
 
-For more details on schedule policies, see the [Temporal SchedulePolicy Documentation](https://docs.temporal.io/schedule#policies).
+For more details, see the `SchedulePolicy` and `ScheduleOverlapPolicy` options shown above.
 
 ## Key Considerations
 
@@ -92,8 +94,9 @@ backup_schedule = ScheduleDefinition(
     )
 )
 
-@workflows.workflow.define(schedules=[backup_schedule])
+@workflows.workflow.define(name="database_backup_workflow", schedules=[backup_schedule])
 class DatabaseBackupWorkflow:
+    @workflows.workflow.entrypoint
     async def run(self, retention_days: int = 30):
         print(f"Starting backup with {retention_days} day retention")
         # Backup implementation here
