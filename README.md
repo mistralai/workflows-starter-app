@@ -1,5 +1,13 @@
 # workflows-starter-app
 
+> [!WARNING]
+> **Deprecated.** This template is no longer maintained here. It is now packaged
+> directly with the `mistralai-workflows-cli`. To generate a starter app, run:
+>
+> ```bash
+> uvx mistralai-workflows-cli@latest setup
+> ```
+
 Copier template for bootstrapping Mistral Workflows projects.
 
 ## Usage
